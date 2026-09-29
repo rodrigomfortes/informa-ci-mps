@@ -1,0 +1,28 @@
+# Build Maven
+target/
+*.class
+*.jar
+*.war
+
+# Maven Wrapper (mantemos o wrapper versionado, mas nao o jar baixado)
+.mvn/wrapper/maven-wrapper.jar
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Eclipse
+.settings/
+.project
+.classpath
+bin/
+
+# VS Code
+.vscode/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
