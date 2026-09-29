@@ -1,0 +1,147 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="uc-usuarios" name="Casos de Uso - Gerenciamento de Usuários">
+    <mxGraphModel dx="1200" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1300" pageHeight="1150" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Limite do sistema -->
+        <mxCell id="sistema" value="Informa CI — Gerenciamento de Usuários" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;fillColor=none;fontStyle=1;fontSize=15;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="200" y="20" width="840" height="1100" as="geometry" />
+        </mxCell>
+
+        <!-- Atores -->
+        <mxCell id="visitante" value="Visitante" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="70" y="85" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="usuario" value="Membro do CI&lt;br&gt;(Aluno / Servidor)" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="70" y="420" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="admin" value="Administrador" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="70" y="880" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="email" value="«sistema»&lt;br&gt;Serviço de E-mail" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="150" width="30" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Casos de uso: conta -->
+        <mxCell id="uc01" value="Cadastrar Conta" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="270" y="80" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="uc02" value="Validar E-mail Institucional" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="620" y="80" width="200" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="uc03" value="&lt;b&gt;Realizar Login&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;Extension points:&lt;br&gt;&lt;i&gt;Recuperar Senha&lt;/i&gt;" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="260" y="200" width="200" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="uc04" value="Recuperar Senha" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="620" y="215" width="200" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="nota" value="{Caso o membro tenha esquecido a senha}" style="shape=note;whiteSpace=wrap;html=1;size=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="500" y="320" width="180" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="uc05" value="Editar Perfil" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="270" y="360" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="uc06" value="Alterar Senha" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="270" y="450" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="uc07" value="Realizar Logout" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="270" y="540" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="uc08" value="Excluir Própria Conta" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="270" y="630" width="180" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Casos de uso: administração -->
+        <mxCell id="uc09" value="Consultar Membros" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="270" y="760" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="uc10" value="Bloquear / Desbloquear Membro" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="270" y="850" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="uc11" value="Alterar Perfil de Acesso&lt;br&gt;&lt;font style=&quot;font-size: 10px&quot;&gt;(Aluno / Publicador / Admin)&lt;/font&gt;" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="260" y="940" width="200" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="uc12" value="Remover Membro" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="270" y="1030" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="uc13" value="Registrar Ação no Log de Auditoria" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="640" y="940" width="200" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Associações ator — caso de uso -->
+        <mxCell id="a01" style="endArrow=none;html=1;" edge="1" parent="1" source="visitante" target="uc01">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a02" style="endArrow=none;html=1;" edge="1" parent="1" source="usuario" target="uc03">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a03" style="endArrow=none;html=1;" edge="1" parent="1" source="usuario" target="uc05">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a04" style="endArrow=none;html=1;" edge="1" parent="1" source="usuario" target="uc06">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a05" style="endArrow=none;html=1;" edge="1" parent="1" source="usuario" target="uc07">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a06" style="endArrow=none;html=1;" edge="1" parent="1" source="usuario" target="uc08">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a07" style="endArrow=none;html=1;" edge="1" parent="1" source="admin" target="uc09">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a08" style="endArrow=none;html=1;" edge="1" parent="1" source="admin" target="uc10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a09" style="endArrow=none;html=1;" edge="1" parent="1" source="admin" target="uc11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a10" style="endArrow=none;html=1;" edge="1" parent="1" source="admin" target="uc12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a11" style="endArrow=none;html=1;" edge="1" parent="1" source="email" target="uc02">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a12" style="endArrow=none;html=1;" edge="1" parent="1" source="email" target="uc04">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Generalização: Administrador é um Membro do CI -->
+        <mxCell id="g01" style="endArrow=block;endFill=0;endSize=14;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="admin" target="usuario">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="30" y="910" />
+              <mxPoint x="30" y="450" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Inclusões -->
+        <mxCell id="i01" value="«include»" style="endArrow=open;endSize=12;dashed=1;html=1;" edge="1" parent="1" source="uc01" target="uc02">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="i02" value="«include»" style="endArrow=open;endSize=12;dashed=1;html=1;" edge="1" parent="1" source="uc10" target="uc13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="i03" value="«include»" style="endArrow=open;endSize=12;dashed=1;html=1;" edge="1" parent="1" source="uc11" target="uc13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="i04" value="«include»" style="endArrow=open;endSize=12;dashed=1;html=1;" edge="1" parent="1" source="uc12" target="uc13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Extensão com restrição -->
+        <mxCell id="e01" value="«extend»" style="endArrow=open;endSize=12;dashed=1;html=1;verticalAlign=bottom;" edge="1" parent="1" source="uc04" target="uc03">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n01" style="endArrow=none;dashed=1;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="nota">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="560" y="250" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
