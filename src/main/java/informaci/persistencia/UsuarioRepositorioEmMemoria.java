@@ -43,4 +43,9 @@ public class UsuarioRepositorioEmMemoria implements UsuarioRepositorio {
     public int quantidade() {
         return usuarios.size();
     }
+
+    @Override
+    public java.util.List<Usuario> listarTodos() {
+        return java.util.List.copyOf(usuarios.values());
+    }
 }
