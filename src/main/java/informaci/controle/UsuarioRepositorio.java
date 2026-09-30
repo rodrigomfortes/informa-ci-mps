@@ -25,4 +25,10 @@ public interface UsuarioRepositorio {
      * <p>Espera receber o e-mail já normalizado por {@link Usuario}.
      */
     boolean existeComEmail(String email);
+
+    /**
+     * Retorna todos os usuários armazenados no sistema.
+     */
+    java.util.List<Usuario> listarTodos();
+    
 }
