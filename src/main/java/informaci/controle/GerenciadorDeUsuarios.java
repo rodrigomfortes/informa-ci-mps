@@ -43,4 +43,11 @@ public class GerenciadorDeUsuarios {
         repositorio.salvar(usuario);
         return usuario;
     }
+
+     /**
+      * Lista todos os usuários cadastrados no sistema.
+      */
+    public java.util.List<Usuario> listarTodos() {
+        return repositorio.listarTodos();
+    }
 }
