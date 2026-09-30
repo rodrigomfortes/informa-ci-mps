@@ -91,4 +91,16 @@ class GerenciadorDeUsuariosTest {
     void deve_rejeitar_quando_repositorio_e_nulo() {
         assertThrows(NullPointerException.class, () -> new GerenciadorDeUsuarios(null));
     }
+
+    @Test
+    void deve_listar_todos_os_usuarios_cadastrados() {
+        gerenciador.adicionar("Ana Souza", "ana@academico.ufpb.br", Papel.MEMBRO);
+        gerenciador.adicionar("Bruno Lima", "bruno@academico.ufpb.br", Papel.ADMINISTRADOR);
+    
+        java.util.List<Usuario> lista = gerenciador.listarTodos();
+    
+        assertEquals(2, lista.size());
+        assertEquals("Ana Souza", lista.get(0).getNome());
+        assertEquals("Bruno Lima", lista.get(1).getNome());
+    }
 }
