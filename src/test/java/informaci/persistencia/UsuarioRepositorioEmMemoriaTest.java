@@ -12,6 +12,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class UsuarioRepositorioEmMemoriaTest {
 
+    private static final String LOGIN = "anasouza";
+    private static final String SENHA = "Senha@123";
+
     private UsuarioRepositorioEmMemoria repositorio;
 
     @BeforeEach
@@ -26,7 +29,7 @@ class UsuarioRepositorioEmMemoriaTest {
 
     @Test
     void deve_armazenar_o_usuario_salvo() {
-        repositorio.salvar(new Usuario("Ana Souza", "ana@academico.ufpb.br", Papel.MEMBRO));
+        repositorio.salvar(new Usuario("Ana Souza", "ana@academico.ufpb.br", LOGIN, SENHA, Papel.MEMBRO));
 
         assertEquals(1, repositorio.quantidade());
     }
@@ -38,7 +41,7 @@ class UsuarioRepositorioEmMemoriaTest {
 
     @Test
     void deve_encontrar_email_de_usuario_ja_salvo() {
-        repositorio.salvar(new Usuario("Ana Souza", "ana@academico.ufpb.br", Papel.MEMBRO));
+        repositorio.salvar(new Usuario("Ana Souza", "ana@academico.ufpb.br", LOGIN, SENHA, Papel.MEMBRO));
 
         assertTrue(repositorio.existeComEmail("ana@academico.ufpb.br"));
     }
@@ -55,8 +58,8 @@ class UsuarioRepositorioEmMemoriaTest {
 
     @Test
     void deve_armazenar_usuarios_distintos_separadamente() {
-        repositorio.salvar(new Usuario("Ana Souza", "ana@academico.ufpb.br", Papel.MEMBRO));
-        repositorio.salvar(new Usuario("Bruno Lima", "bruno@academico.ufpb.br", Papel.ADMINISTRADOR));
+        repositorio.salvar(new Usuario("Ana Souza", "ana@academico.ufpb.br", LOGIN, SENHA, Papel.MEMBRO));
+        repositorio.salvar(new Usuario("Bruno Lima", "bruno@academico.ufpb.br", LOGIN, SENHA, Papel.ADMINISTRADOR));
 
         assertEquals(2, repositorio.quantidade());
     }
