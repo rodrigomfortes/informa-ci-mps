@@ -20,7 +20,7 @@ class UsuarioRepositorioEmArquivoTest {
     Path pasta;
 
     private Usuario novoUsuario() {
-        return new Usuario("Maria", "maria@ufpb.br", Papel.MEMBRO);
+        return new Usuario("Maria", "maria@ufpb.br", "maria", "Senha@123", Papel.MEMBRO);
     }
 
     @Test
