@@ -1,6 +1,8 @@
 package informaci.controle;
 
+import informaci.entidade.LoginInvalidoException;
 import informaci.entidade.Papel;
+import informaci.entidade.SenhaInvalidaException;
 import informaci.entidade.Usuario;
 
 import java.util.Objects;
@@ -30,11 +32,13 @@ public class GerenciadorDeUsuarios {
      * apenas por maiúsculas ou espaços.
      *
      * @return o usuário criado, já com identidade atribuída
-     * @throws IllegalArgumentException    se algum dado for inválido
+     * @throws LoginInvalidoException      se o login violar alguma regra de formato
+     * @throws SenhaInvalidaException      se a senha não atender à política de senhas
+     * @throws IllegalArgumentException    se algum outro dado for inválido
      * @throws EmailJaCadastradoException  se o e-mail já pertencer a outro usuário
      */
-    public Usuario adicionar(String nome, String email, Papel papel) {
-        Usuario usuario = new Usuario(nome, email, papel);
+    public Usuario adicionar(String nome, String email, String login, String senha, Papel papel) {
+        Usuario usuario = new Usuario(nome, email, login, senha, papel);
 
         if (repositorio.existeComEmail(usuario.getEmail())) {
             throw new EmailJaCadastradoException(usuario.getEmail());
