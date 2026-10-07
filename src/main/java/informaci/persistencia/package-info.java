@@ -20,6 +20,8 @@
  * nenhuma linha das camadas de controle ou entidade.
  *
  * <p><strong>Regra de dependência:</strong> é a única camada que conhece
- * detalhes de armazenamento. Nenhuma outra camada deve importar classes daqui.
+ * detalhes de armazenamento. Nenhuma outra camada deve importar classes daqui
+ * — a exceção é {@code informaci.Aplicacao}, ponto de entrada que monta o
+ * repositório escolhido e o entrega ao controle.
  */
 package informaci.persistencia;
