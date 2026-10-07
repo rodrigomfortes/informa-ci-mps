@@ -1,5 +1,6 @@
 package informaci.entidade;
 
+import java.io.Serializable;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -11,7 +12,9 @@ import java.util.regex.Pattern;
  * inválido: as validações ficam no construtor, de modo que qualquer instância
  * que chegue às demais camadas já está consistente.
  */
-public class Usuario {
+public class Usuario implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private static final Pattern FORMATO_DE_EMAIL =
             Pattern.compile("^[\\w.+-]+@[\\w-]+(\\.[\\w-]+)+$");
