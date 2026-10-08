@@ -1,5 +1,5 @@
 classDiagram
-    %% Enumerações
+    %% Enumeracoes
     class VinculoCI {
         <<enumeration>>
         Aluno
@@ -22,6 +22,7 @@ classDiagram
     class Usuario {
         <<entity>>
         -id: Inteiro
+        -login: Texto
         -nome: Texto
         -email: Texto
         -senha: Texto
@@ -44,6 +45,44 @@ classDiagram
         -id: Inteiro
         -acao: Texto
         -dataHora: Data
+    }
+
+    %% Excecoes
+    class LoginInvalidoException {
+        <<exception>>
+    }
+    class SenhaInvalidaException {
+        <<exception>>
+    }
+    class PersistenciaException {
+        <<exception>>
+    }
+    class EmailJaCadastradoException {
+        <<exception>>
+    }
+
+    %% Persistencia
+    class UsuarioRepositorio {
+        <<interface>>
+        +salvar(usuario: Usuario)
+        +existeComEmail(email: Texto): Booleano
+        +listarTodos(): Lista~Usuario~
+    }
+    class UsuarioRepositorioEmMemoria {
+        <<repository>>
+        -usuarios: Lista~Usuario~
+        +salvar(usuario: Usuario)
+        +existeComEmail(email: Texto): Booleano
+        +listarTodos(): Lista~Usuario~
+    }
+    class UsuarioRepositorioEmArquivo {
+        <<repository>>
+        -arquivo: Caminho
+        +salvar(usuario: Usuario)
+        +existeComEmail(email: Texto): Booleano
+        +listarTodos(): Lista~Usuario~
+        -carregar()
+        -gravar()
     }
 
     %% Controles
@@ -81,6 +120,7 @@ classDiagram
     class TelaCadastro {
         <<boundary>>
         +nome
+        +login
         +email
         +senha
         +vinculo
@@ -128,14 +168,25 @@ classDiagram
     TelaListaMembros --> ControladorAdministracaoMembros : aciona
     TelaGerenciarMembro --> ControladorAdministracaoMembros : aciona
 
-    %% Relacionamentos Controle -> Entidade
-    ControladorCadastro --> Usuario : instancia / persiste
-    ControladorAutenticacao --> Usuario : consulta
+    %% Relacionamentos Controle -> Entidade e Persistencia
+    ControladorCadastro --> Usuario : instancia
+    ControladorCadastro --> UsuarioRepositorio : persiste dados
+    ControladorAutenticacao --> UsuarioRepositorio : consulta
     ControladorAutenticacao --> TokenRecuperacaoSenha : gera / valida
-    ControladorPerfil --> Usuario : atualiza
-    ControladorAdministracaoMembros --> Usuario : altera estado
+    ControladorPerfil --> UsuarioRepositorio : atualiza
+    ControladorAdministracaoMembros --> UsuarioRepositorio : altera estado
     ControladorAdministracaoMembros --> ControladorAuditoria : aciona
     ControladorAuditoria --> RegistroAuditoria : persiste
+
+    %% Relacionamentos Excecoes
+    Usuario ..> LoginInvalidoException : lanca
+    Usuario ..> SenhaInvalidaException : lanca
+    UsuarioRepositorioEmArquivo ..> PersistenciaException : lanca
+    ControladorCadastro ..> EmailJaCadastradoException : lanca
+
+    %% Implementacoes de Persistencia
+    UsuarioRepositorio <|.. UsuarioRepositorioEmMemoria : implementa
+    UsuarioRepositorio <|.. UsuarioRepositorioEmArquivo : implementa
 
     %% Relacionamentos Entidade
     TokenRecuperacaoSenha "*" --> "1" Usuario : pertenceA

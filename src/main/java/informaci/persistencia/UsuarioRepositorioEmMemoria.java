@@ -12,9 +12,10 @@ import java.util.UUID;
  * Armazena os usuários numa coleção mantida em memória RAM.
  *
  * <p>Os dados existem apenas enquanto a aplicação estiver em execução: ao
- * encerrar, tudo se perde. É a estratégia definida para esta sprint, e trocá-la
- * por um banco de dados no futuro exige apenas uma nova implementação de
- * {@link UsuarioRepositorio} — nenhuma outra camada precisa mudar.
+ * encerrar, tudo se perde. Para mantê-los entre execuções existe
+ * {@link UsuarioRepositorioEmArquivo}; as duas implementam
+ * {@link UsuarioRepositorio}, então alternar entre elas não exige mudança em
+ * nenhuma outra camada.
  *
  * <p>A coleção é um {@link LinkedHashMap} e não um {@link java.util.HashMap}
  * porque ele preserva a ordem de inserção, o que torna a listagem de usuários
