@@ -3,7 +3,7 @@
  *
  * <p>Responsável pela interação entre o sistema e os atores externos
  * (Visitante, Membro do CI e Administrador, conforme o diagrama de casos de
- * uso em {@code docs/specs/casos-de-uso/}).
+ * uso em {@code docs/04-casos-de-uso/}).
  *
  * <p>Por ora a interface é de console ({@code TelaDeUsuarios}), com as
  * opções de adicionar e listar usuários. Ela é iniciada por
