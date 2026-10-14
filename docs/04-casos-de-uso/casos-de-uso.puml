@@ -1,0 +1,46 @@
+@startuml casos-de-uso
+left to right direction
+skinparam packageStyle rectangle
+
+actor Visitante
+actor "Membro do CI" as Membro
+actor Administrador
+actor "Serviço de e-mail" as Email <<sistema>>
+
+Membro <|-- Administrador
+
+rectangle "Informa CI — gerenciamento de usuários" {
+  usecase "UC01 Cadastrar usuário" as UC01
+  usecase "UC02 Listar usuários" as UC02
+  usecase "UC03 Autenticar" as UC03
+  usecase "UC04 Criar conta" as UC04
+  usecase "UC05 Confirmar e-mail institucional" as UC05
+  usecase "UC06 Recuperar senha" as UC06
+  usecase "UC07 Editar perfil" as UC07
+  usecase "UC08 Alterar senha" as UC08
+  usecase "UC09 Excluir própria conta" as UC09
+  usecase "UC10 Bloquear ou desbloquear usuário" as UC10
+  usecase "UC11 Alterar papel" as UC11
+  usecase "UC12 Remover usuário" as UC12
+  usecase "UC13 Registrar ação na auditoria" as UC13
+}
+
+Visitante --> UC04
+Membro --> UC03
+Membro --> UC07
+Membro --> UC08
+Membro --> UC09
+Administrador --> UC01
+Administrador --> UC02
+Administrador --> UC10
+Administrador --> UC11
+Administrador --> UC12
+
+UC04 ..> UC05 : <<include>>
+UC06 ..> UC03 : <<extend>>
+UC10 ..> UC13 : <<include>>
+UC11 ..> UC13 : <<include>>
+UC12 ..> UC13 : <<include>>
+UC05 --> Email
+UC06 --> Email
+@enduml
