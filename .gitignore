@@ -29,3 +29,6 @@ desktop.ini
 
 # Dados gravados pela aplicação
 usuarios.bin
+
+# OpenSpec (Node.js)
+node_modules/

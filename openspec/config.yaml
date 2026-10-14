@@ -1,0 +1,27 @@
+schema: spec-driven
+
+# Contexto do projeto — lido pelos comandos /opsx:* quando houver assistente de IA.
+context: |
+  Escreva todos os artefatos em português do Brasil.
+  Sistema: Informa CI — sistema web que centraliza as notícias, os eventos e os comunicados
+  do Centro de Informática da UFPB e oferece um mural de achados e perdidos.
+  Visão, usuários, escopo negativo e restrições estão em docs/01-visao.md.
+  Termos do domínio estão em docs/02-glossario.md; use-os exatamente como definidos.
+  Arquitetura: camadas fronteira, controle, entidade e persistência, em Java 21 sem frameworks
+  de aplicação (única biblioteca externa: JUnit, apenas nos testes). Ver docs/08-projeto.md.
+
+rules:
+  specs:
+    - Cabeçalho do requisito no formato "RFnn — Título" (funcional) ou "NF-CAT-nn — Título" (não funcional)
+    - IDs nunca são reaproveitados nem renumerados
+    - O texto do requisito usa "O sistema DEVE ..." (ou "NÃO DEVE")
+    - Toda linha de metadados vem logo após o texto, nesta ordem — **Prioridade:** Essencial | Importante | Desejável; **Casos de uso:** UCnn
+    - Todo requisito tem pelo menos um cenário com GIVEN/WHEN/THEN
+    - Requisitos não funcionais têm critério mensurável no THEN (tempo, percentual, quantidade)
+    - As mensagens citadas nos cenários são exatamente as exibidas pelo sistema
+  proposal:
+    - Sempre declare o que fica fora do escopo da mudança
+  design:
+    - Toda decisão relevante de arquitetura vira um ADR em docs/07-arquitetura/adr/
+  tasks:
+    - Cada tarefa cabe em um commit; use Conventional Commits
