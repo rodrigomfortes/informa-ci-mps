@@ -8,7 +8,7 @@ A elicitação aconteceu entre 27 e 29/09/2026 e combinou duas técnicas complem
 |---|---|---|---|
 | Entrevista E1 | 27/09/2026 (domingo), 19h30–20h10 | On-line (Google Meet) | Estudante de graduação, membro de centro acadêmico. Entrevistador: Rodrigo |
 | Entrevista E2 | 28/09/2026 (segunda), 10h00–10h30 | Área de convivência do CI | Estudante de graduação ingressante. Entrevistador: Rodrigo |
-| Brainstorming | 29/09/2026 (terça), 14h00–16h30 | Sala de estudos do CI | Os 6 integrantes da equipe |
+| Brainstorming | 29/09/2026 (terça), 14h00–14h30 | Sala de aula do CI | Os 6 integrantes da equipe |
 
 ## 4.1 Entrevistas semiestruturadas com alunos
 
@@ -19,13 +19,21 @@ A elicitação aconteceu entre 27 e 29/09/2026 e combinou duas técnicas complem
 | Participantes | E1: estudante de graduação, membro de um centro acadêmico e responsável pela divulgação dos eventos da entidade · E2: estudante de graduação ingressante · Entrevistador: Rodrigo Monteiro Fortes de Oliveira |
 | Registro | Anotações do entrevistador. O áudio foi gravado com autorização, usado só para conferir as anotações e apagado depois da consolidação. Os entrevistados são identificados apenas pelo perfil |
 
+**Perguntas-guia:**
+1. Como você fica sabendo das notícias, eventos e avisos do CI hoje?
+2. Quantos grupos ou perfis você acompanha para isso?
+3. Já perdeu algum evento ou aviso importante? Por quê?
+4. Quem pode publicar avisos nesses grupos?
+5. Por onde você costuma ver esses avisos (celular, computador)?
+6. O que um lugar único para essas informações precisaria ter para você usar?
+
 **Por que esta técnica:** a entrevista permite entender, pelo relato de quem vive o problema, como a informação do CI circula hoje e por que se perde. Os entrevistados representam duas situações diferentes: quem **divulga** eventos de uma entidade estudantil (E1) e quem **acabou de chegar** ao CI (E2). O formato semiestruturado permite abordar os mesmos temas com os dois estudantes e, ao mesmo tempo, aprofundar o que surgisse na conversa. As conversas foram on-line ou em local informal, conforme a disponibilidade de cada estudante, para não atrapalhar a rotina de aulas.
 
 **Principais achados:**
 
 - **E1** — divulga os eventos da entidade no Instagram e em grupos de WhatsApp, precisa repetir cada aviso em vários canais e não sabe se ele chega a todos → **P1**, Módulo de Notícias (visão §2.3).
 - **E1** — avisos repassados de grupo em grupo perdem o horário e o local, e os interessados perguntam nos próprios grupos; defende publicações com formato padronizado (data, horário, local) → **P5**, Módulo de Notícias.
-- **E1** — os grupos já receberam golpes enviados por perfis falsos; defende que só pessoas autorizadas publiquem em nome do CI e que o cadastro exija o e-mail institucional → **P6**, papel Publicador, UC04 e UC05 (criação de conta com confirmação do e-mail institucional).
+- **E1** — nos grupos de avisos, só os administradores publicam; defende que o novo canal mantenha esse controle, com publicação apenas por pessoas autorizadas, e que o cadastro exija o e-mail institucional → **P6**, papel Publicador, UC04 e UC05 (criação de conta com confirmação do e-mail institucional).
 - **E1** — sugere um responsável capaz de bloquear contas mal usadas e saber quem fez cada alteração → **P6**, papel Administrador, UC10 e UC13.
 - **E2** — só entrou nos grupos do curso semanas após o início das aulas e perdeu atividades da recepção aos calouros → **P2**, **P3**.
 - **E2** — acompanha mais de 5 grupos, onde os avisos se perdem no meio das conversas e são difíceis de achar depois → **P1**, **P4**.
@@ -35,25 +43,28 @@ A elicitação aconteceu entre 27 e 29/09/2026 e combinou duas técnicas complem
 
 | Campo | Registro |
 |---|---|
-| Data e horário | 29/09/2026 (terça), 14h00–16h30 |
-| Local | Sala de estudos do CI |
+| Data e horário | 29/09/2026 (terça), 14h00–14h30 |
+| Local | Sala de aula do CI |
 | Participantes | Gabriel de Albuquerque Simplício, Gabriel Liszt Ferreira de Oliveira, Gerson Gonçalves de Freitas, Gustavo de Andrade Lacerda, Nicolas Kleiton da Silva Melo e Rodrigo Monteiro Fortes de Oliveira |
-| Registro | Ideias registradas em notas adesivas no quadro e consolidadas pela equipe ao fim da sessão |
+| Registro | Os resultados da sessão estão consolidados na tabela "Resultados" abaixo |
 
-**Por que esta técnica:** o brainstorming junta os resultados das entrevistas à experiência dos próprios integrantes, que também são alunos do CI, e os transforma em funcionalidades com a participação de todos. É rápido, adequado a equipes pequenas e estimula gerar ideias antes de julgá-las.
+**Por que esta técnica:** é rápida e adequada a uma equipe pequena. Permitiu juntar os resultados das entrevistas à experiência dos próprios integrantes, que também são alunos do CI.
 
-**Procedimento:** a sessão teve três etapas.
-1. O entrevistador apresentou os resultados de E1 e E2, e cada integrante relatou a própria experiência com os canais atuais do CI.
-2. Os integrantes propuseram livremente ideias de funcionalidades em notas adesivas, sem críticas.
-3. As ideias foram agrupadas por afinidade e classificadas como essencial, importante, desejável ou fora do escopo, sempre com uma justificativa.
+**Como foi feito:** o entrevistador resumiu E1 e E2, cada integrante sugeriu ideias livremente e, no fim, a equipe decidiu o que entraria no sistema.
 
-**Principais achados:**
+**Resultados:**
 
-- A experiência dos integrantes revelou um problema que as entrevistas não cobriram: objetos perdidos e encontrados são divulgados por e-mail para toda a comunidade, sem dizer onde retirá-los nem quando foram devolvidos → **P7**, **P8**, Módulo de Achados e Perdidos.
-- O sistema foi organizado em dois módulos principais, Notícias e Achados e Perdidos, apoiados pelo gerenciamento de usuários → visão §2.3.
-- Foram definidos os papéis Membro, Publicador e Administrador → glossário, visão §2.4.
-- Chat entre usuários, publicação automática no Instagram e aplicativo nativo ficaram fora do escopo → escopo negativo da visão §2.3.
-- O gerenciamento de usuários foi classificado como essencial e base para os demais módulos → `openspec/specs/usuarios/`.
+| Ideia | Decisão |
+|---|---|
+| Um feed único com notícias, eventos e comunicados | Entra → Módulo de Notícias (P1–P5) |
+| Só pessoas autorizadas publicam em nome do CI | Entra → papel Publicador (P6) |
+| Mural de objetos perdidos e encontrados, com local de retirada | Entra → Módulo de Achados e Perdidos (P7, P8) |
+| Cadastro de usuários com login, senha e papel | Entra, como base dos demais módulos → `openspec/specs/usuarios/` |
+| Chat entre usuários | Fora do escopo |
+| Publicar automaticamente no WhatsApp ou no Instagram | Fora do escopo |
+| Aplicativo nativo para celular | Fora do escopo; o acesso será pelo navegador |
+
+O mural de achados e perdidos veio da experiência dos integrantes, não das entrevistas: hoje cada objeto vira um e-mail para toda a comunidade.
 
 ## 4.3 Considerações finais
 

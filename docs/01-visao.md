@@ -51,7 +51,7 @@ O Informa CI substitui esses meios dispersos por uma plataforma única, de acess
 | P3 | Só recebe a informação quem está nos grupos certos | Alunos ingressantes | E2: só entrou nos grupos do curso semanas após o início das aulas |
 | P4 | Não há histórico: avisos antigos e eventos futuros são difíceis de encontrar | Alunos | E2: nos grupos, os avisos se perdem no meio das conversas e são difíceis de encontrar depois |
 | P5 | Avisos repassados de grupo em grupo perdem data, horário e local | Alunos; quem divulga eventos | E1: interessados precisam perguntar o horário e o local nos grupos |
-| P6 | Não dá para saber se quem publicou estava autorizado; já circularam golpes por perfis falsos | Toda a comunidade | E1 |
+| P6 | Nos grupos de avisos, só os administradores publicam; um canal único precisa manter esse controle sobre quem publica | Toda a comunidade | E1 |
 | P7 | Cada objeto perdido ou encontrado vira um e-mail para toda a comunidade | Toda a comunidade | Brainstorming (experiência dos integrantes) |
 | P8 | Não se sabe onde retirar um objeto encontrado nem se ele já foi devolvido | Donos de objetos perdidos | Brainstorming |
 
