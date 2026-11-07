@@ -6,7 +6,7 @@ Gerenciamento dos usuários do Informa CI: cadastro com validação de nome, e-m
 ## Requirements
 
 ### Requirement: RF01 — Cadastrar usuário
-O sistema DEVE permitir que o Administrador cadastre usuários informando nome, e-mail, login, senha e papel (Membro ou Administrador), recusando e-mails já cadastrados sem diferenciar maiúsculas de minúsculas e informando o motivo de qualquer recusa. Um cadastro recusado NÃO DEVE ser armazenado.
+O sistema DEVE permitir que o Administrador cadastre usuários informando nome, e-mail, login, senha e papel (Membro, Administrador ou Publicador), recusando e-mails já cadastrados sem diferenciar maiúsculas de minúsculas e informando o motivo de qualquer recusa. Um cadastro recusado NÃO DEVE ser armazenado.
 
 **Prioridade:** Essencial
 **Casos de uso:** UC01
@@ -15,6 +15,10 @@ O sistema DEVE permitir que o Administrador cadastre usuários informando nome, 
 - **GIVEN** não existe usuário com o e-mail "ana@academico.ufpb.br"
 - **WHEN** o Administrador cadastra o nome "Ana Souza", o e-mail "ana@academico.ufpb.br", o login "anasouza", a senha "Senha@123" e o papel Membro
 - **THEN** o sistema informa "Usuário adicionado: anasouza" e o usuário passa a aparecer na listagem
+
+#### Scenario: Cadastro de Publicador
+- **WHEN** o Administrador cadastra um usuário com dados válidos e escolhe o papel 3 (Publicador)
+- **THEN** o usuário é cadastrado com o papel PUBLICADOR e passa a poder publicar (RF05)
 
 #### Scenario: E-mail já cadastrado
 - **GIVEN** já existe um usuário com o e-mail "ana@academico.ufpb.br"
