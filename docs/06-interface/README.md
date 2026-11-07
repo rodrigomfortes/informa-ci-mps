@@ -1,6 +1,14 @@
 # Descrição da interface com o usuário
 
-> Seção 8 do modelo. Os rascunhos (wireframes) das telas dos 3 casos de uso detalhados entram na **Entrega 2 (30/10/2026)**, conforme o [cronograma](../00-entregas.md). Cada tela terá um ID (TLnn) citado nos casos de uso.
+> Seção 8 do modelo. Cada tela tem um ID (TLnn), citado nos casos de uso detalhados.
+
+## Telas
+
+| ID | Tela | Classe | Casos de uso |
+|---|---|---|---|
+| TL01 | Menu principal (escolha do armazenamento, módulos e quantidade de entidades) | `TelaPrincipal` | UC01, UC14, UC16, UC19 |
+| TL02 | Tela de usuários (adicionar e listar) | `TelaDeUsuarios` | UC01, UC02 |
+| TL03 | Tela de publicações (publicar, feed, editar, remover) | `TelaDePublicacoes` | UC14, UC15, UC16, UC17 |
 
 ## Interface atual (Sprints 1 a 3)
 
