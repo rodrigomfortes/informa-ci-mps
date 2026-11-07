@@ -1,8 +1,10 @@
 package informaci.fronteira;
 
-import informaci.controle.GerenciadorDeUsuarios;
+import informaci.controle.FacadeSingletonController;
 import informaci.entidade.Papel;
+import informaci.persistencia.PublicacaoRepositorioEmMemoria;
 import informaci.persistencia.UsuarioRepositorioEmMemoria;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -17,12 +19,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class TelaDeUsuariosTest {
 
     private UsuarioRepositorioEmMemoria repositorio;
-    private GerenciadorDeUsuarios gerenciador;
+    private FacadeSingletonController fachada;
 
     @BeforeEach
-    void criarGerenciadorComRepositorioVazio() {
+    void criarFachadaComRepositorioVazio() {
         repositorio = new UsuarioRepositorioEmMemoria();
-        gerenciador = new GerenciadorDeUsuarios(repositorio);
+        fachada = FacadeSingletonController.inicializar(repositorio, new PublicacaoRepositorioEmMemoria());
+    }
+
+    @AfterEach
+    void encerrarFachada() {
+        FacadeSingletonController.encerrar();
     }
 
     /** Executa a tela com as linhas informadas como entrada e devolve o que ela escreveu. */
@@ -31,7 +38,7 @@ class TelaDeUsuariosTest {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         PrintStream saida = new PrintStream(bytes, true, StandardCharsets.UTF_8);
 
-        new TelaDeUsuarios(gerenciador, entrada, saida).executar();
+        new TelaDeUsuarios(fachada, entrada, saida).executar();
 
         return bytes.toString(StandardCharsets.UTF_8);
     }
@@ -86,7 +93,7 @@ class TelaDeUsuariosTest {
 
     @Test
     void deve_listar_os_usuarios_cadastrados() {
-        gerenciador.adicionar("Ana Souza", "ana@academico.ufpb.br", "anasouza", "Senha@123", Papel.MEMBRO);
+        fachada.adicionarUsuario("Ana Souza", "ana@academico.ufpb.br", "anasouza", "Senha@123", Papel.MEMBRO);
 
         String saida = executar("2", "0");
 
