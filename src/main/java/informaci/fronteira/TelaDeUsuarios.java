@@ -2,7 +2,9 @@ package informaci.fronteira;
 
 import informaci.controle.EmailJaCadastradoException;
 import informaci.controle.FacadeSingletonController;
+import informaci.entidade.EmailInvalidoException;
 import informaci.entidade.LoginInvalidoException;
+import informaci.entidade.NomeInvalidoException;
 import informaci.entidade.Papel;
 import informaci.entidade.SenhaInvalidaException;
 import informaci.entidade.Usuario;
@@ -60,9 +62,8 @@ public class TelaDeUsuarios {
     /**
      * Coleta os dados e tenta adicionar o usuário.
      *
-     * <p>A ordem dos {@code catch} importa: {@link LoginInvalidoException} e
-     * {@link SenhaInvalidaException} estendem {@link IllegalArgumentException}
-     * e por isso precisam vir antes dela. O último {@code catch} cobre falhas
+     * <p>Cada exceção de negócio vira uma mensagem que nomeia o campo com
+     * problema (NF-USA-01). O último {@code catch} cobre falhas
      * de armazenamento, que chegam como exceção não verificada porque a
      * fronteira não conhece a camada de persistência.
      */
@@ -80,7 +81,7 @@ public class TelaDeUsuarios {
             console.escrever("Login inválido: " + e.getMessage());
         } catch (SenhaInvalidaException e) {
             console.escrever("Senha inválida: " + e.getMessage());
-        } catch (EmailJaCadastradoException | IllegalArgumentException e) {
+        } catch (NomeInvalidoException | EmailInvalidoException | EmailJaCadastradoException e) {
             console.escrever("Não foi possível adicionar: " + e.getMessage());
         } catch (RuntimeException e) {
             console.escrever("Falha ao armazenar o usuário: " + e.getMessage());

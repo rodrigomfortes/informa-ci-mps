@@ -1,9 +1,12 @@
 package informaci.controle;
 
+import informaci.entidade.EmailInvalidoException;
 import informaci.entidade.LoginInvalidoException;
+import informaci.entidade.NomeInvalidoException;
 import informaci.entidade.Papel;
 import informaci.entidade.SenhaInvalidaException;
 import informaci.entidade.Usuario;
+import informaci.entidade.ValidadorDeEmail;
 
 import java.util.List;
 import java.util.Objects;
@@ -35,7 +38,8 @@ public class GerenciadorDeUsuarios {
      * @return o usuário criado, já com identidade atribuída
      * @throws LoginInvalidoException      se o login violar alguma regra de formato
      * @throws SenhaInvalidaException      se a senha não atender à política de senhas
-     * @throws IllegalArgumentException    se algum outro dado for inválido
+     * @throws NomeInvalidoException       se o nome estiver em branco
+     * @throws EmailInvalidoException      se o e-mail for inválido
      * @throws EmailJaCadastradoException  se o e-mail já pertencer a outro usuário
      */
     public Usuario adicionar(String nome, String email, String login, String senha, Papel papel) {
@@ -62,7 +66,7 @@ public class GerenciadorDeUsuarios {
      * @throws UsuarioNaoEncontradoException se nenhum usuário tiver esse e-mail
      */
     public Usuario buscarPorEmail(String email) {
-        String normalizado = Usuario.normalizarEmail(email);
+        String normalizado = ValidadorDeEmail.normalizar(email);
         return repositorio.buscarPorEmail(normalizado)
                 .orElseThrow(() -> new UsuarioNaoEncontradoException(normalizado));
     }

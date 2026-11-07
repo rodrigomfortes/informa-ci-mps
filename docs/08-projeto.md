@@ -12,8 +12,8 @@ src/main/java/informaci/
 ├── controle/              ← fachada única (FacadeSingletonController), gerentes dos casos de uso
 │                            (GerenciadorDeUsuarios, GerenciadorDePublicacoes), contratos dos
 │                            repositórios e exceções de regra de negócio
-├── entidade/              ← Usuario, Papel, Publicacao, Categoria, DadosDaPublicacao
-│                            e exceções de validação dos dados
+├── entidade/              ← Usuario, Papel, Publicacao, Categoria, DadosDaPublicacao,
+│                            validadores (nome, e-mail, login, senha) e exceções de validação
 └── persistencia/          ← implementações dos repositórios (memória e arquivo binário),
                              ArquivoBinario e PersistenciaException
 src/test/java/informaci/   ← mesma estrutura; testes JUnit por cenário das specs
@@ -128,9 +128,19 @@ classDiagram
             -String login
             -String senha
             -Papel papel
-            +normalizarEmail(String email)$ String
-            -validarLogin(login)$ String
-            -validarSenha(senha, login, email)$ String
+        }
+        class ValidadorDeNome {
+            +validar(String nome)$ String
+        }
+        class ValidadorDeEmail {
+            +validar(String email)$ String
+            +normalizar(String email)$ String
+        }
+        class ValidadorDeLogin {
+            +validar(String login)$ String
+        }
+        class ValidadorDeSenha {
+            +validar(String senha, String login, String email)$ String
         }
         class Papel {
             <<enumeration>>
@@ -166,6 +176,8 @@ classDiagram
             dataHora
             local
         }
+        class NomeInvalidoException
+        class EmailInvalidoException
         class LoginInvalidoException
         class SenhaInvalidaException
         class PublicacaoInvalidaException
@@ -220,8 +232,15 @@ classDiagram
     UsuarioRepositorioEmArquivo ..> ArquivoBinario
     PublicacaoRepositorioEmArquivo ..> ArquivoBinario
 
-    Usuario ..> LoginInvalidoException : lança
-    Usuario ..> SenhaInvalidaException : lança
+    Usuario ..> ValidadorDeNome
+    Usuario ..> ValidadorDeEmail
+    Usuario ..> ValidadorDeLogin
+    Usuario ..> ValidadorDeSenha
+    GerenciadorDeUsuarios ..> ValidadorDeEmail : normalizar
+    ValidadorDeNome ..> NomeInvalidoException : lança
+    ValidadorDeEmail ..> EmailInvalidoException : lança
+    ValidadorDeLogin ..> LoginInvalidoException : lança
+    ValidadorDeSenha ..> SenhaInvalidaException : lança
     Publicacao ..> PublicacaoInvalidaException : lança
     GerenciadorDeUsuarios ..> EmailJaCadastradoException : lança
     GerenciadorDeUsuarios ..> UsuarioNaoEncontradoException : lança
@@ -230,15 +249,16 @@ classDiagram
     PublicacaoRepositorioEmArquivo ..> PersistenciaException : converte IOException
 ```
 
-> Para não poluir o diagrama, as superclasses das exceções foram omitidas: `LoginInvalidoException`, `SenhaInvalidaException` e `PublicacaoInvalidaException` estendem `IllegalArgumentException`; as demais estendem `RuntimeException`.
+> Para não poluir o diagrama, as superclasses das exceções foram omitidas: `NomeInvalidoException`, `EmailInvalidoException`, `LoginInvalidoException`, `SenhaInvalidaException` e `PublicacaoInvalidaException` estendem `IllegalArgumentException`; as demais estendem `RuntimeException`.
 
 **Tratamento das exceções** (`TelaDeUsuarios` e `TelaDePublicacoes`): cada exceção vira uma mensagem para o usuário, e o sistema continua em execução (NF-USA-01, NF-CON-01).
 
 | Exceção | Lançada por | Mensagem exibida |
 |---|---|---|
-| `LoginInvalidoException` | `Usuario` (RF02) | "Login inválido: …" |
-| `SenhaInvalidaException` | `Usuario` (RF03) | "Senha inválida: …" |
-| `IllegalArgumentException` | `Usuario` (nome ou e-mail, RF01) | "Não foi possível adicionar: …" |
+| `NomeInvalidoException` | `ValidadorDeNome` (RF01) | "Não foi possível adicionar: …" |
+| `EmailInvalidoException` | `ValidadorDeEmail` (RF01) | "Não foi possível adicionar: …" |
+| `LoginInvalidoException` | `ValidadorDeLogin` (RF02) | "Login inválido: …" |
+| `SenhaInvalidaException` | `ValidadorDeSenha` (RF03) | "Senha inválida: …" |
 | `EmailJaCadastradoException` | `GerenciadorDeUsuarios` (RF01) | "Não foi possível adicionar: …" |
 | `PublicacaoInvalidaException` | `Publicacao` | "Publicação inválida: …" |
 | `UsuarioNaoEncontradoException` | `GerenciadorDeUsuarios` (autor da publicação) | "Não foi possível publicar: …" |
