@@ -2,6 +2,9 @@ package informaci.controle;
 
 import informaci.entidade.Usuario;
 
+import java.util.List;
+import java.util.Optional;
+
 /**
  * Contrato de armazenamento de usuários.
  *
@@ -20,15 +23,23 @@ public interface UsuarioRepositorio {
     void salvar(Usuario usuario);
 
     /**
+     * Busca o usuário com o e-mail indicado.
+     *
+     * <p>Espera receber o e-mail já normalizado por {@link Usuario#normalizarEmail(String)}.
+     */
+    Optional<Usuario> buscarPorEmail(String email);
+
+    /**
      * Informa se já existe usuário armazenado com o e-mail indicado.
      *
      * <p>Espera receber o e-mail já normalizado por {@link Usuario}.
      */
-    boolean existeComEmail(String email);
+    default boolean existeComEmail(String email) {
+        return buscarPorEmail(email).isPresent();
+    }
 
     /**
-     * Retorna todos os usuários armazenados no sistema.
+     * Retorna todos os usuários armazenados no sistema, na ordem de cadastro.
      */
-    java.util.List<Usuario> listarTodos();
-    
+    List<Usuario> listarTodos();
 }

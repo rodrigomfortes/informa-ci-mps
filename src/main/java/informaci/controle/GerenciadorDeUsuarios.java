@@ -5,6 +5,7 @@ import informaci.entidade.Papel;
 import informaci.entidade.SenhaInvalidaException;
 import informaci.entidade.Usuario;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -48,10 +49,25 @@ public class GerenciadorDeUsuarios {
         return usuario;
     }
 
-     /**
-      * Lista todos os usuários cadastrados no sistema.
-      */
-    public java.util.List<Usuario> listarTodos() {
+    /**
+     * Lista todos os usuários cadastrados no sistema, na ordem de cadastro.
+     */
+    public List<Usuario> listarTodos() {
         return repositorio.listarTodos();
+    }
+
+    /**
+     * Busca o usuário pelo e-mail, sem diferenciar maiúsculas de minúsculas.
+     *
+     * @throws UsuarioNaoEncontradoException se nenhum usuário tiver esse e-mail
+     */
+    public Usuario buscarPorEmail(String email) {
+        String normalizado = Usuario.normalizarEmail(email);
+        return repositorio.buscarPorEmail(normalizado)
+                .orElseThrow(() -> new UsuarioNaoEncontradoException(normalizado));
+    }
+
+    public int quantidade() {
+        return repositorio.listarTodos().size();
     }
 }
