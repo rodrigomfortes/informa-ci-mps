@@ -1,6 +1,7 @@
 package informaci.entidade;
 
 import java.io.Serializable;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -65,11 +66,25 @@ public class Usuario implements Serializable {
         if (email == null || email.isBlank()) {
             throw new IllegalArgumentException("O e-mail do usuário é obrigatório.");
         }
-        String normalizado = email.trim().toLowerCase();
+        String normalizado = normalizarEmail(email);
         if (!FORMATO_DE_EMAIL.matcher(normalizado).matches()) {
             throw new IllegalArgumentException("E-mail em formato inválido: " + email);
         }
         return normalizado;
+    }
+
+    /**
+     * Normaliza um e-mail do mesmo jeito que o cadastro: sem espaços em volta
+     * e em minúsculas. Quem procura um usuário pelo e-mail deve usar esta
+     * mesma regra, ou deixará de encontrá-lo por diferença de maiúsculas.
+     *
+     * @return o e-mail normalizado, ou {@code null} se o e-mail for nulo
+     */
+    public static String normalizarEmail(String email) {
+        if (email == null) {
+            return null;
+        }
+        return email.trim().toLowerCase(Locale.ROOT);
     }
 
     /**
