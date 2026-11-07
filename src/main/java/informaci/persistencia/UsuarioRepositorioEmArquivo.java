@@ -4,15 +4,12 @@ import informaci.controle.UsuarioRepositorio;
 import informaci.entidade.Usuario;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -37,20 +34,46 @@ public class UsuarioRepositorioEmArquivo implements UsuarioRepositorio {
         carregar();
     }
 
+    /**
+     * Armazena o usuário e regrava o arquivo.
+     *
+     * <p>Se a gravação falhar, a cópia em memória volta ao estado anterior:
+     * um cadastro que não chegou ao arquivo não pode aparecer na listagem nem
+     * bloquear uma nova tentativa com o mesmo e-mail.
+     */
     @Override
     public void salvar(Usuario usuario) {
         Objects.requireNonNull(usuario, "Não é possível salvar um usuário nulo.");
-        usuarios.put(usuario.getId(), usuario);
-        gravar();
+        alterarEGravar(() -> usuarios.put(usuario.getId(), usuario));
     }
 
     @Override
-    public boolean existeComEmail(String email) {
-        if (email == null) {
-            return false;
+    public Optional<Usuario> buscarPorId(UUID id) {
+        return Optional.ofNullable(usuarios.get(id));
+    }
+
+    @Override
+    public void remover(UUID id) {
+        alterarEGravar(() -> usuarios.remove(id));
+    }
+
+    private void alterarEGravar(Runnable alteracao) {
+        Map<UUID, Usuario> estadoAnterior = new LinkedHashMap<>(usuarios);
+        alteracao.run();
+        try {
+            gravar();
+        } catch (PersistenciaException e) {
+            usuarios.clear();
+            usuarios.putAll(estadoAnterior);
+            throw e;
         }
+    }
+
+    @Override
+    public Optional<Usuario> buscarPorEmail(String email) {
         return usuarios.values().stream()
-                .anyMatch(usuario -> usuario.getEmail().equals(email));
+                .filter(usuario -> usuario.getEmail().equals(email))
+                .findFirst();
     }
 
     @Override
@@ -59,13 +82,8 @@ public class UsuarioRepositorioEmArquivo implements UsuarioRepositorio {
     }
 
     private void carregar() {
-        if (!Files.exists(arquivo)) {
-            return;
-        }
-        try (ObjectInputStream entrada = new ObjectInputStream(Files.newInputStream(arquivo))) {
-            List<?> lidos = (List<?>) entrada.readObject();
-            for (Object objeto : lidos) {
-                Usuario usuario = (Usuario) objeto;
+        try {
+            for (Usuario usuario : ArquivoBinario.ler(arquivo, Usuario.class)) {
                 usuarios.put(usuario.getId(), usuario);
             }
         } catch (IOException | ClassNotFoundException | ClassCastException e) {
@@ -74,8 +92,8 @@ public class UsuarioRepositorioEmArquivo implements UsuarioRepositorio {
     }
 
     private void gravar() {
-        try (ObjectOutputStream saida = new ObjectOutputStream(Files.newOutputStream(arquivo))) {
-            saida.writeObject(new ArrayList<>(usuarios.values()));
+        try {
+            ArquivoBinario.gravar(arquivo, List.copyOf(usuarios.values()));
         } catch (IOException e) {
             throw new PersistenciaException("Não foi possível gravar os usuários em " + arquivo + ".", e);
         }

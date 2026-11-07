@@ -13,5 +13,11 @@ public enum Papel {
     MEMBRO,
 
     /** Responsável pela gestão de contas dos membros. */
-    ADMINISTRADOR
+    ADMINISTRADOR,
+
+    /**
+     * Membro autorizado a criar, editar e remover publicações em nome de
+     * coordenação, laboratório ou entidade estudantil.
+     */
+    PUBLICADOR
 }

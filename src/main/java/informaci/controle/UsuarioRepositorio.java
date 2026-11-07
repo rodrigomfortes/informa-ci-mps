@@ -2,6 +2,10 @@ package informaci.controle;
 
 import informaci.entidade.Usuario;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 /**
  * Contrato de armazenamento de usuários.
  *
@@ -13,22 +17,36 @@ import informaci.entidade.Usuario;
 public interface UsuarioRepositorio {
 
     /**
-     * Armazena o usuário informado.
+     * Armazena o usuário informado. Se já houver um com a mesma identidade, ele
+     * é substituído e mantém a sua posição na ordem de cadastro.
      *
      * @throws NullPointerException se o usuário for nulo
      */
     void salvar(Usuario usuario);
+
+    Optional<Usuario> buscarPorId(UUID id);
+
+    /** Remove o usuário com a identidade indicada, se existir. */
+    void remover(UUID id);
+
+    /**
+     * Busca o usuário com o e-mail indicado.
+     *
+     * <p>Espera receber o e-mail já normalizado por {@link informaci.entidade.ValidadorDeEmail#normalizar(String)}.
+     */
+    Optional<Usuario> buscarPorEmail(String email);
 
     /**
      * Informa se já existe usuário armazenado com o e-mail indicado.
      *
      * <p>Espera receber o e-mail já normalizado por {@link Usuario}.
      */
-    boolean existeComEmail(String email);
+    default boolean existeComEmail(String email) {
+        return buscarPorEmail(email).isPresent();
+    }
 
     /**
-     * Retorna todos os usuários armazenados no sistema.
+     * Retorna todos os usuários armazenados no sistema, na ordem de cadastro.
      */
-    java.util.List<Usuario> listarTodos();
-    
+    List<Usuario> listarTodos();
 }

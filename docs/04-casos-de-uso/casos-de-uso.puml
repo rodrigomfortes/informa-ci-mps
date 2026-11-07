@@ -4,43 +4,75 @@ skinparam packageStyle rectangle
 
 actor Visitante
 actor "Membro do CI" as Membro
+actor Publicador
 actor Administrador
 actor "Serviço de e-mail" as Email <<sistema>>
 
+Membro <|-- Publicador
 Membro <|-- Administrador
 
-rectangle "Informa CI — gerenciamento de usuários" {
-  usecase "UC01 Cadastrar usuário" as UC01
-  usecase "UC02 Listar usuários" as UC02
-  usecase "UC03 Autenticar" as UC03
-  usecase "UC04 Criar conta" as UC04
-  usecase "UC05 Confirmar e-mail institucional" as UC05
-  usecase "UC06 Recuperar senha" as UC06
-  usecase "UC07 Editar perfil" as UC07
-  usecase "UC08 Alterar senha" as UC08
-  usecase "UC09 Excluir própria conta" as UC09
-  usecase "UC10 Bloquear ou desbloquear usuário" as UC10
-  usecase "UC11 Alterar papel" as UC11
-  usecase "UC12 Remover usuário" as UC12
-  usecase "UC13 Registrar ação na auditoria" as UC13
+rectangle "Informa CI" {
+  package "Gerenciamento de usuários" {
+    usecase "UC01 Cadastrar usuário" as UC01
+    usecase "UC02 Listar usuários" as UC02
+    usecase "UC03 Autenticar" as UC03
+    usecase "UC04 Criar conta" as UC04
+    usecase "UC05 Confirmar e-mail institucional" as UC05
+    usecase "UC06 Recuperar senha" as UC06
+    usecase "UC07 Editar perfil" as UC07
+    usecase "UC08 Alterar senha" as UC08
+    usecase "UC09 Excluir própria conta" as UC09
+    usecase "UC10 Bloquear ou desbloquear usuário" as UC10
+    usecase "UC11 Alterar papel" as UC11
+    usecase "UC12 Remover usuário" as UC12
+    usecase "UC13 Registrar ação na auditoria" as UC13
+    usecase "UC19 Consultar quantidade de entidades" as UC19
+    usecase "UC23 Editar usuário" as UC23
+  }
+  package "Módulo de Notícias" {
+    usecase "UC14 Publicar publicação" as UC14
+    usecase "UC15 Consultar feed" as UC15
+    usecase "UC16 Editar publicação" as UC16
+    usecase "UC17 Remover publicação" as UC17
+    usecase "UC18 Buscar publicações" as UC18
+  }
+  package "Achados e Perdidos" {
+    usecase "UC20 Registrar item no mural" as UC20
+    usecase "UC21 Consultar mural" as UC21
+    usecase "UC22 Marcar item como devolvido" as UC22
+  }
 }
 
 Visitante --> UC04
+Visitante --> UC15
+Visitante --> UC18
+Visitante --> UC21
 Membro --> UC03
 Membro --> UC07
 Membro --> UC08
 Membro --> UC09
+Membro --> UC15
+Membro --> UC20
+Membro --> UC21
+Membro --> UC22
+Publicador --> UC14
+Publicador --> UC16
+Publicador --> UC17
 Administrador --> UC01
 Administrador --> UC02
 Administrador --> UC10
 Administrador --> UC11
 Administrador --> UC12
+Administrador --> UC19
+Administrador --> UC23
 
 UC04 ..> UC05 : <<include>>
 UC06 ..> UC03 : <<extend>>
 UC10 ..> UC13 : <<include>>
 UC11 ..> UC13 : <<include>>
 UC12 ..> UC13 : <<include>>
+UC16 ..> UC15 : <<include>>
+UC17 ..> UC15 : <<include>>
 UC05 --> Email
 UC06 --> Email
 @enduml
