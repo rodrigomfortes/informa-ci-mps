@@ -1,5 +1,7 @@
 package informaci.controle;
 
+import informaci.entidade.Usuario;
+import informaci.entidade.DadosDoUsuario;
 import informaci.entidade.Categoria;
 import informaci.entidade.DadosDaPublicacao;
 import informaci.entidade.Papel;
@@ -112,5 +114,36 @@ class FacadeSingletonControllerTest {
 
         fachada.removerPublicacao(publicacao.getId());
         assertEquals(0, fachada.quantidadeDePublicacoes());
+    }
+
+    @Test
+    void deve_recusar_remover_usuario_que_tem_publicacoes() {
+        Usuario autor = fachada.adicionarUsuario(
+                "Coordenação", "coordenacao@ci.ufpb.br", "coordenacao", SENHA, Papel.PUBLICADOR);
+        fachada.publicar("coordenacao@ci.ufpb.br", COMUNICADO);
+
+        assertThrows(UsuarioComPublicacoesException.class, () -> fachada.removerUsuario(autor.getId()));
+        assertEquals(1, fachada.quantidadeDeUsuarios());
+    }
+
+    @Test
+    void deve_remover_usuario_sem_publicacoes() {
+        Usuario ana = fachada.adicionarUsuario("Ana Souza", "ana@academico.ufpb.br", "anasouza", SENHA, Papel.MEMBRO);
+
+        fachada.removerUsuario(ana.getId());
+
+        assertEquals(0, fachada.quantidadeDeEntidadesCadastradas());
+    }
+
+    @Test
+    void deve_mostrar_os_dados_novos_do_autor_no_feed_depois_de_editar() {
+        Usuario autor = fachada.adicionarUsuario(
+                "Coordenação", "coordenacao@ci.ufpb.br", "coordenacao", SENHA, Papel.PUBLICADOR);
+        fachada.publicar("coordenacao@ci.ufpb.br", COMUNICADO);
+
+        fachada.editarUsuario(autor.getId(), new DadosDoUsuario(
+                "Coordenação de Computação", "coordenacao@ci.ufpb.br", "coordcc", SENHA, Papel.PUBLICADOR));
+
+        assertEquals("coordcc", fachada.listarFeed().get(0).getAutor().getLogin());
     }
 }

@@ -44,8 +44,22 @@ public class UsuarioRepositorioEmArquivo implements UsuarioRepositorio {
     @Override
     public void salvar(Usuario usuario) {
         Objects.requireNonNull(usuario, "Não é possível salvar um usuário nulo.");
+        alterarEGravar(() -> usuarios.put(usuario.getId(), usuario));
+    }
+
+    @Override
+    public Optional<Usuario> buscarPorId(UUID id) {
+        return Optional.ofNullable(usuarios.get(id));
+    }
+
+    @Override
+    public void remover(UUID id) {
+        alterarEGravar(() -> usuarios.remove(id));
+    }
+
+    private void alterarEGravar(Runnable alteracao) {
         Map<UUID, Usuario> estadoAnterior = new LinkedHashMap<>(usuarios);
-        usuarios.put(usuario.getId(), usuario);
+        alteracao.run();
         try {
             gravar();
         } catch (PersistenciaException e) {

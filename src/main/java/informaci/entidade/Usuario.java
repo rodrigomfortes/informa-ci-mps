@@ -31,12 +31,28 @@ public class Usuario implements Serializable {
      * @throws SenhaInvalidaException se a senha não atender à política de senhas
      */
     public Usuario(String nome, String email, String login, String senha, Papel papel) {
-        this.id = UUID.randomUUID();
+        this(UUID.randomUUID(), nome, email, login, senha, papel);
+    }
+
+    private Usuario(UUID id, String nome, String email, String login, String senha, Papel papel) {
+        this.id = id;
         this.nome = ValidadorDeNome.validar(nome);
         this.email = ValidadorDeEmail.validar(email);
         this.login = ValidadorDeLogin.validar(login);
         this.senha = ValidadorDeSenha.validar(senha, this.login, this.email);
         this.papel = Objects.requireNonNull(papel, "O papel do usuário é obrigatório.");
+    }
+
+    /**
+     * Devolve a versão editada deste usuário: mesma identidade, com os novos
+     * dados, todos validados de novo.
+     *
+     * @throws IllegalArgumentException (ou uma subclasse específica) se algum dado for inválido
+     */
+    public Usuario comDados(DadosDoUsuario novosDados) {
+        Objects.requireNonNull(novosDados, "Os dados do usuário são obrigatórios.");
+        return new Usuario(id, novosDados.nome(), novosDados.email(), novosDados.login(),
+                novosDados.senha(), novosDados.papel());
     }
 
     public UUID getId() {

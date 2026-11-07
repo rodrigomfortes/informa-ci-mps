@@ -7,7 +7,7 @@
 | ID | Tela | Classe | Casos de uso |
 |---|---|---|---|
 | TL01 | Menu principal (escolha do armazenamento, módulos e quantidade de entidades) | `TelaPrincipal` | UC01, UC14, UC16, UC19 |
-| TL02 | Tela de usuários (adicionar e listar) | `TelaDeUsuarios` | UC01, UC02 |
+| TL02 | Tela de usuários (adicionar, listar, editar e remover) | `TelaDeUsuarios` | UC01, UC02, UC12, UC23 |
 | TL03 | Tela de publicações (publicar, feed, editar, remover) | `TelaDePublicacoes` | UC14, UC15, UC16, UC17 |
 
 ## Interface atual (Sprints 1 a 3)

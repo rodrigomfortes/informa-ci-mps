@@ -40,6 +40,16 @@ public class UsuarioRepositorioEmMemoria implements UsuarioRepositorio {
                 .findFirst();
     }
 
+    @Override
+    public Optional<Usuario> buscarPorId(UUID id) {
+        return Optional.ofNullable(usuarios.get(id));
+    }
+
+    @Override
+    public void remover(UUID id) {
+        usuarios.remove(id);
+    }
+
     /** Quantidade de usuários armazenados. Útil para verificação em testes. */
     public int quantidade() {
         return usuarios.size();

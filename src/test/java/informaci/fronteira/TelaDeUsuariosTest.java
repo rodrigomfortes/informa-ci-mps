@@ -1,5 +1,7 @@
 package informaci.fronteira;
 
+import informaci.entidade.DadosDaPublicacao;
+import informaci.entidade.Categoria;
 import informaci.controle.FacadeSingletonController;
 import informaci.entidade.Papel;
 import informaci.persistencia.PublicacaoRepositorioEmMemoria;
@@ -112,5 +114,49 @@ class TelaDeUsuariosTest {
         String saida = executar("2");
 
         assertTrue(saida.contains("Nenhum usuário cadastrado."));
+    }
+
+    @Test
+    void deve_editar_mantendo_os_campos_deixados_em_branco() {
+        fachada.adicionarUsuario("Ana Souza", "ana@academico.ufpb.br", "anasouza", "Senha@123", Papel.MEMBRO);
+
+        String saida = executar("3", "1", "Ana Souza Lima", "", "", "", "3", "0");
+
+        assertTrue(saida.contains("Usuário editado: anasouza"));
+        assertEquals("Ana Souza Lima", repositorio.listarTodos().get(0).getNome());
+        assertEquals("Senha@123", repositorio.listarTodos().get(0).getSenha());
+        assertEquals(Papel.PUBLICADOR, repositorio.listarTodos().get(0).getPapel());
+    }
+
+    @Test
+    void deve_exibir_mensagem_quando_a_edicao_e_invalida() {
+        fachada.adicionarUsuario("Ana Souza", "ana@academico.ufpb.br", "anasouza", "Senha@123", Papel.MEMBRO);
+
+        String saida = executar("3", "1", "", "", "ana123", "", "", "0");
+
+        assertTrue(saida.contains("Login inválido: O login não pode conter números."));
+        assertEquals("anasouza", repositorio.listarTodos().get(0).getLogin());
+    }
+
+    @Test
+    void deve_remover_apos_confirmacao() {
+        fachada.adicionarUsuario("Ana Souza", "ana@academico.ufpb.br", "anasouza", "Senha@123", Papel.MEMBRO);
+
+        String saida = executar("4", "1", "s", "0");
+
+        assertTrue(saida.contains("Usuário removido: anasouza"));
+        assertEquals(0, repositorio.quantidade());
+    }
+
+    @Test
+    void deve_exibir_mensagem_ao_remover_autor_de_publicacoes() {
+        fachada.adicionarUsuario("Coordenação", "coordenacao@ci.ufpb.br", "coordenacao", "Senha@123", Papel.PUBLICADOR);
+        fachada.publicar("coordenacao@ci.ufpb.br",
+                new DadosDaPublicacao("Aviso", "Texto.", Categoria.COMUNICADO, null, null));
+
+        String saida = executar("4", "1", "s", "0");
+
+        assertTrue(saida.contains("Não foi possível remover: O usuário coordenacao é autor de 1 publicação(ões)"));
+        assertEquals(1, repositorio.quantidade());
     }
 }

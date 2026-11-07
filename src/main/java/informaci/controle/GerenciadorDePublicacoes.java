@@ -69,6 +69,22 @@ public class GerenciadorDePublicacoes {
         repositorio.remover(id);
     }
 
+    /** Quantas publicações têm o usuário informado como autor. */
+    public int contarDoAutor(Usuario autor) {
+        return (int) repositorio.listarTodas().stream()
+                .filter(publicacao -> publicacao.getAutor().equals(autor))
+                .count();
+    }
+
+    /** Atualiza, nas publicações do autor, os dados dele depois de uma edição. */
+    public void atualizarAutor(Usuario autorEditado) {
+        for (Publicacao publicacao : repositorio.listarTodas()) {
+            if (publicacao.getAutor().equals(autorEditado)) {
+                repositorio.salvar(publicacao.comAutor(autorEditado));
+            }
+        }
+    }
+
     public int quantidade() {
         return repositorio.listarTodas().size();
     }

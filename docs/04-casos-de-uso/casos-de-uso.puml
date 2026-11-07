@@ -27,6 +27,7 @@ rectangle "Informa CI" {
     usecase "UC12 Remover usuário" as UC12
     usecase "UC13 Registrar ação na auditoria" as UC13
     usecase "UC19 Consultar quantidade de entidades" as UC19
+    usecase "UC23 Editar usuário" as UC23
   }
   package "Módulo de Notícias" {
     usecase "UC14 Publicar publicação" as UC14
@@ -63,6 +64,7 @@ Administrador --> UC10
 Administrador --> UC11
 Administrador --> UC12
 Administrador --> UC19
+Administrador --> UC23
 
 UC04 ..> UC05 : <<include>>
 UC06 ..> UC03 : <<extend>>
