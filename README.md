@@ -58,9 +58,9 @@ O aviso *"should contain SHALL or MUST"* é esperado: escrevemos em português, 
 | 2. Descrição geral | [`docs/01-visao.md`](docs/01-visao.md) §2 |
 | 3. Glossário | [`docs/02-glossario.md`](docs/02-glossario.md) |
 | 4. Elicitação de requisitos | [`docs/03-elicitacao.md`](docs/03-elicitacao.md) |
-| 5.1 Requisitos funcionais | [`openspec/specs/usuarios/spec.md`](openspec/specs/usuarios/spec.md) |
+| 5.1 Requisitos funcionais | [`openspec/specs/usuarios/spec.md`](openspec/specs/usuarios/spec.md) (RF01–RF04) e [`openspec/specs/publicacoes/spec.md`](openspec/specs/publicacoes/spec.md) (RF05–RF09) |
 | 5.2 Requisitos não funcionais | [`openspec/specs/rnf/<categoria>/spec.md`](openspec/specs/rnf/) |
-| 6. Especificação de casos de uso e diagrama | [`docs/04-casos-de-uso/`](docs/04-casos-de-uso/) |
+| 6. Especificação de casos de uso e diagrama | [`docs/04-casos-de-uso/`](docs/04-casos-de-uso/): diagrama completo e UC01, UC14 e UC16 detalhados |
 | 7. Diagrama de classes de análise | [`docs/05-analise.md`](docs/05-analise.md) |
 | 8. Descrição da interface | [`docs/06-interface/`](docs/06-interface/) |
 | 9. Diagramas de arquitetura | [`docs/07-arquitetura/`](docs/07-arquitetura/) + ADRs em `adr/` |
@@ -91,12 +91,12 @@ O aviso *"should contain SHALL or MUST"* é esperado: escrevemos em português, 
 │   ├── config.yaml               ← contexto e regras do projeto
 │   ├── specs/                    ← REQUISITOS EM VIGOR (fonte da verdade)
 │   │   ├── usuarios/spec.md
+│   │   ├── publicacoes/spec.md
 │   │   └── rnf/{seguranca,confiabilidade,manutenibilidade,usabilidade,desempenho,hardware-software}/spec.md
 │   └── changes/                  ← mudanças propostas, ainda não incorporadas
 │       └── archive/              ← mudanças concluídas (histórico)
 └── .github/
-    ├── workflows/openspec.yml    ← valida as specs a cada push e PR
-    └── pull_request_template.md
+    └── workflows/openspec.yml    ← valida as specs a cada push e PR
 ```
 
 ---
