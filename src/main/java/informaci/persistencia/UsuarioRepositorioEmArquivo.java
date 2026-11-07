@@ -9,6 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -55,12 +56,10 @@ public class UsuarioRepositorioEmArquivo implements UsuarioRepositorio {
     }
 
     @Override
-    public boolean existeComEmail(String email) {
-        if (email == null) {
-            return false;
-        }
+    public Optional<Usuario> buscarPorEmail(String email) {
         return usuarios.values().stream()
-                .anyMatch(usuario -> usuario.getEmail().equals(email));
+                .filter(usuario -> usuario.getEmail().equals(email))
+                .findFirst();
     }
 
     @Override

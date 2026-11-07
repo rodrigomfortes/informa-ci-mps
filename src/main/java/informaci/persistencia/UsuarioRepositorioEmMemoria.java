@@ -4,8 +4,10 @@ import informaci.controle.UsuarioRepositorio;
 import informaci.entidade.Usuario;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -32,12 +34,10 @@ public class UsuarioRepositorioEmMemoria implements UsuarioRepositorio {
     }
 
     @Override
-    public boolean existeComEmail(String email) {
-        if (email == null) {
-            return false;
-        }
+    public Optional<Usuario> buscarPorEmail(String email) {
         return usuarios.values().stream()
-                .anyMatch(usuario -> usuario.getEmail().equals(email));
+                .filter(usuario -> usuario.getEmail().equals(email))
+                .findFirst();
     }
 
     /** Quantidade de usuários armazenados. Útil para verificação em testes. */
@@ -46,7 +46,7 @@ public class UsuarioRepositorioEmMemoria implements UsuarioRepositorio {
     }
 
     @Override
-    public java.util.List<Usuario> listarTodos() {
-        return java.util.List.copyOf(usuarios.values());
+    public List<Usuario> listarTodos() {
+        return List.copyOf(usuarios.values());
     }
 }

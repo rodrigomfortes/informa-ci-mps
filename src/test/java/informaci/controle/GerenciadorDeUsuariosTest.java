@@ -143,4 +143,24 @@ class GerenciadorDeUsuariosTest {
         assertEquals("Ana Souza", lista.get(0).getNome());
         assertEquals("Bruno Lima", lista.get(1).getNome());
     }
+
+    @Test
+    void deve_encontrar_usuario_pelo_email_sem_diferenciar_maiusculas() {
+        Usuario ana = gerenciador.adicionar("Ana Souza", "ana@academico.ufpb.br", LOGIN, SENHA, Papel.MEMBRO);
+
+        assertEquals(ana, gerenciador.buscarPorEmail("  ANA@Academico.UFPB.br "));
+    }
+
+    @Test
+    void deve_recusar_busca_por_email_nao_cadastrado() {
+        assertThrows(UsuarioNaoEncontradoException.class,
+                () -> gerenciador.buscarPorEmail("ninguem@academico.ufpb.br"));
+    }
+
+    @Test
+    void deve_contar_os_usuarios_cadastrados() {
+        gerenciador.adicionar("Ana Souza", "ana@academico.ufpb.br", LOGIN, SENHA, Papel.MEMBRO);
+
+        assertEquals(1, gerenciador.quantidade());
+    }
 }
