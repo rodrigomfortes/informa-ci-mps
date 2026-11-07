@@ -91,6 +91,7 @@ O aviso *"should contain SHALL or MUST"* é esperado: escrevemos em português, 
 │   ├── config.yaml               ← contexto e regras do projeto
 │   ├── specs/                    ← REQUISITOS EM VIGOR (fonte da verdade)
 │   │   ├── usuarios/spec.md
+│   │   ├── publicacoes/spec.md
 │   │   └── rnf/{seguranca,confiabilidade,manutenibilidade,usabilidade,desempenho,hardware-software}/spec.md
 │   └── changes/                  ← mudanças propostas, ainda não incorporadas
 │       └── archive/              ← mudanças concluídas (histórico)
