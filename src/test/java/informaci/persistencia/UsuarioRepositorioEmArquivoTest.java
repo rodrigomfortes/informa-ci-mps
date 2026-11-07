@@ -1,5 +1,6 @@
 package informaci.persistencia;
 
+import informaci.entidade.DadosDoUsuario;
 import informaci.entidade.Papel;
 import informaci.entidade.Usuario;
 import org.junit.jupiter.api.BeforeEach;
@@ -108,5 +109,22 @@ class UsuarioRepositorioEmArquivoTest {
         try (Stream<Path> arquivosDaPasta = Files.list(pasta)) {
             assertEquals(1, arquivosDaPasta.count());
         }
+    }
+
+    @Test
+    void deve_manter_a_edicao_e_a_remocao_apos_reabrir_o_repositorio() {
+        Usuario ana = new Usuario("Ana Souza", "ana@academico.ufpb.br", LOGIN, SENHA, Papel.MEMBRO);
+        Usuario bruno = new Usuario("Bruno Lima", "bruno@academico.ufpb.br", LOGIN, SENHA, Papel.MEMBRO);
+        UsuarioRepositorioEmArquivo repositorio = new UsuarioRepositorioEmArquivo(arquivo);
+        repositorio.salvar(ana);
+        repositorio.salvar(bruno);
+
+        repositorio.salvar(ana.comDados(
+                new DadosDoUsuario("Ana Lima", "ana@academico.ufpb.br", LOGIN, SENHA, Papel.PUBLICADOR)));
+        repositorio.remover(bruno.getId());
+
+        List<Usuario> lidos = new UsuarioRepositorioEmArquivo(arquivo).listarTodos();
+        assertEquals(1, lidos.size());
+        assertEquals("Ana Lima", lidos.get(0).getNome());
     }
 }

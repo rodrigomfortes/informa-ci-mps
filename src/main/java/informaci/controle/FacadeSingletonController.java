@@ -1,6 +1,7 @@
 package informaci.controle;
 
 import informaci.entidade.DadosDaPublicacao;
+import informaci.entidade.DadosDoUsuario;
 import informaci.entidade.Papel;
 import informaci.entidade.Publicacao;
 import informaci.entidade.Usuario;
@@ -77,6 +78,33 @@ public final class FacadeSingletonController {
 
     public List<Usuario> listarUsuarios() {
         return usuarios.listarTodos();
+    }
+
+    /**
+     * Edita o usuário e atualiza o autor nas publicações dele, para que o feed
+     * mostre os dados novos.
+     *
+     * @see GerenciadorDeUsuarios#editar
+     */
+    public Usuario editarUsuario(UUID id, DadosDoUsuario novosDados) {
+        Usuario editado = usuarios.editar(id, novosDados);
+        publicacoes.atualizarAutor(editado);
+        return editado;
+    }
+
+    /**
+     * Remove o usuário, desde que ele não seja autor de nenhuma publicação.
+     *
+     * @throws UsuarioComPublicacoesException se o usuário tiver publicações
+     * @throws UsuarioNaoEncontradoException  se não houver usuário com essa identidade
+     */
+    public void removerUsuario(UUID id) {
+        Usuario usuario = usuarios.buscarPorId(id);
+        int publicacoesDoUsuario = publicacoes.contarDoAutor(usuario);
+        if (publicacoesDoUsuario > 0) {
+            throw new UsuarioComPublicacoesException(usuario.getLogin(), publicacoesDoUsuario);
+        }
+        usuarios.remover(id);
     }
 
     // ---- Publicações ----

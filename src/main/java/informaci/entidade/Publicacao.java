@@ -64,6 +64,24 @@ public class Publicacao implements Serializable {
         return new Publicacao(id, autor, dataDePublicacao, novosDados);
     }
 
+    /**
+     * Devolve esta publicação com os dados atualizados do autor, depois que ele
+     * foi editado. Não exige de novo o papel Publicador: o que foi publicado
+     * enquanto ele o tinha continua válido.
+     *
+     * @throws IllegalArgumentException se o usuário informado não for o mesmo autor
+     */
+    public Publicacao comAutor(Usuario autorAtualizado) {
+        if (autorAtualizado == null || !autorAtualizado.equals(autor)) {
+            throw new IllegalArgumentException("O autor atualizado deve ser o mesmo usuário.");
+        }
+        return new Publicacao(id, autorAtualizado, dataDePublicacao, dados());
+    }
+
+    private DadosDaPublicacao dados() {
+        return new DadosDaPublicacao(titulo, texto, categoria, dataHora, local);
+    }
+
     /** Só quem tem o papel Publicador pode publicar (glossário: Publicador). */
     private static Usuario validarAutor(Usuario autor) {
         if (autor == null) {
