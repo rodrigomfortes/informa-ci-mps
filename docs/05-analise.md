@@ -2,12 +2,17 @@
 
 > Seção 7 do modelo. Classes **sem atributos e métodos**, mas com os relacionamentos já definidos.
 > Estereótipos ICONIX: «boundary» (fronteira), «control» (controle), «entity» (entidade).
-> Os nomes das entidades vêm do [glossário](02-glossario.md). Escopo desta entrega: gerenciamento de usuários (UC01 a UC13).
+> Os nomes das entidades vêm do [glossário](02-glossario.md).
+
+**Escopo (até a Sprint 3):** gerenciamento de usuários (UC01 a UC13) e Módulo de Notícias (UC14 a UC19), com o CRUD de duas entidades — **Usuário** e **Publicação** — atrás de uma **fachada única** (Facade + Singleton). Os casos de uso de Achados e Perdidos (UC20 a UC22) ainda não foram analisados.
+
+## 7.1 Diagrama de classes de análise
 
 ```mermaid
 classDiagram
     direction LR
 
+    class TelaPrincipal { <<boundary>> }
     class TelaCadastroUsuario { <<boundary>> }
     class TelaListaUsuarios { <<boundary>> }
     class TelaLogin { <<boundary>> }
@@ -15,9 +20,14 @@ classDiagram
     class TelaRecuperacaoSenha { <<boundary>> }
     class TelaPerfil { <<boundary>> }
     class TelaGerenciarUsuario { <<boundary>> }
+    class TelaPublicar { <<boundary>> }
+    class TelaFeed { <<boundary>> }
+    class TelaEditarPublicacao { <<boundary>> }
     class InterfaceServicoEmail { <<boundary>> }
 
+    class FachadaUnica { <<control>> }
     class ControleUsuarios { <<control>> }
+    class ControlePublicacoes { <<control>> }
     class ControleAutenticacao { <<control>> }
     class ControleCriacaoConta { <<control>> }
     class ControlePerfil { <<control>> }
@@ -26,16 +36,28 @@ classDiagram
 
     class Usuario { <<entity>> }
     class Papel { <<entity>> }
+    class Publicacao { <<entity>> }
+    class Categoria { <<entity>> }
     class TokenRecuperacaoSenha { <<entity>> }
     class RegistroAuditoria { <<entity>> }
 
     Usuario "*" --> "1" Papel
+    Publicacao "*" --> "1" Usuario : autor (Publicador)
+    Publicacao "*" --> "1" Categoria
     TokenRecuperacaoSenha "*" --> "1" Usuario : pertence a
     RegistroAuditoria "*" --> "1" Usuario : administrador responsável
     RegistroAuditoria "*" --> "1" Usuario : usuário afetado
 
-    TelaCadastroUsuario ..> ControleUsuarios
-    TelaListaUsuarios ..> ControleUsuarios
+    TelaPrincipal ..> FachadaUnica : quantidade de entidades
+    TelaCadastroUsuario ..> FachadaUnica
+    TelaListaUsuarios ..> FachadaUnica
+    TelaPublicar ..> FachadaUnica
+    TelaFeed ..> FachadaUnica
+    TelaEditarPublicacao ..> FachadaUnica
+
+    FachadaUnica ..> ControleUsuarios
+    FachadaUnica ..> ControlePublicacoes
+
     TelaLogin ..> ControleAutenticacao
     TelaRecuperacaoSenha ..> ControleAutenticacao
     TelaCriarConta ..> ControleCriacaoConta
@@ -43,6 +65,8 @@ classDiagram
     TelaGerenciarUsuario ..> ControleAdministracao
 
     ControleUsuarios ..> Usuario
+    ControlePublicacoes ..> Publicacao
+    ControlePublicacoes ..> Usuario : localiza o autor via fachada
     ControleAutenticacao ..> Usuario
     ControleAutenticacao ..> TokenRecuperacaoSenha
     ControleAutenticacao ..> InterfaceServicoEmail
@@ -54,12 +78,14 @@ classDiagram
     ControleAuditoria ..> RegistroAuditoria
 ```
 
-## Rastreabilidade caso de uso → classes
+**FachadaUnica** é o único controle com que as fronteiras implementadas conversam. Existe uma só instância (Singleton), e ela distribui cada pedido ao controle do caso de uso (Facade), combinando os dois quando a operação envolve as duas entidades: publicar em nome de um usuário e contar as entidades cadastradas. Os controles dos casos de uso ainda não implementados (autenticação, perfil, administração) passarão a ficar atrás da fachada quando forem implementados.
+
+## 7.2 Rastreabilidade caso de uso → classes
 
 | Caso de uso | Controle | Fronteiras |
 |---|---|---|
-| UC01 Cadastrar usuário | ControleUsuarios | TelaCadastroUsuario |
-| UC02 Listar usuários | ControleUsuarios | TelaListaUsuarios |
+| UC01 Cadastrar usuário | FachadaUnica → ControleUsuarios | TelaCadastroUsuario |
+| UC02 Listar usuários | FachadaUnica → ControleUsuarios | TelaListaUsuarios |
 | UC03 Autenticar | ControleAutenticacao | TelaLogin |
 | UC04 Criar conta | ControleCriacaoConta | TelaCriarConta |
 | UC05 Confirmar e-mail institucional | ControleCriacaoConta | InterfaceServicoEmail |
@@ -67,14 +93,21 @@ classDiagram
 | UC07 Editar perfil · UC08 Alterar senha · UC09 Excluir própria conta | ControlePerfil | TelaPerfil |
 | UC10 Bloquear ou desbloquear · UC11 Alterar papel · UC12 Remover usuário | ControleAdministracao | TelaGerenciarUsuario |
 | UC13 Registrar ação na auditoria | ControleAuditoria | — |
+| UC14 Publicar publicação | FachadaUnica → ControleUsuarios, ControlePublicacoes | TelaPublicar |
+| UC15 Consultar feed | FachadaUnica → ControlePublicacoes | TelaFeed |
+| UC16 Editar publicação | FachadaUnica → ControlePublicacoes | TelaFeed, TelaEditarPublicacao |
+| UC17 Remover publicação | FachadaUnica → ControlePublicacoes | TelaFeed |
+| UC19 Consultar quantidade de entidades | FachadaUnica → ControleUsuarios, ControlePublicacoes | TelaPrincipal |
 
-## Correspondência com o código atual
-
-Nas Sprints 1 e 2 foram implementados UC01 e UC02. As classes de análise viraram estas classes de projeto (detalhes em [`08-projeto.md`](08-projeto.md)):
+## 7.3 Correspondência com o código atual
 
 | Classe de análise | Classe no código |
 |---|---|
+| TelaPrincipal | `informaci.fronteira.TelaPrincipal` |
 | TelaCadastroUsuario, TelaListaUsuarios | `informaci.fronteira.TelaDeUsuarios` (uma tela de console com as duas opções) |
+| TelaPublicar, TelaFeed, TelaEditarPublicacao | `informaci.fronteira.TelaDePublicacoes` (uma tela de console com o CRUD) |
+| FachadaUnica | `informaci.controle.FacadeSingletonController` |
 | ControleUsuarios | `informaci.controle.GerenciadorDeUsuarios` |
-| Usuario | `informaci.entidade.Usuario` |
-| Papel | `informaci.entidade.Papel` (enumeração: `MEMBRO`, `ADMINISTRADOR`) |
+| ControlePublicacoes | `informaci.controle.GerenciadorDePublicacoes` |
+| Usuario · Papel | `informaci.entidade.Usuario` · `Papel` (`MEMBRO`, `ADMINISTRADOR`, `PUBLICADOR`) |
+| Publicacao · Categoria | `informaci.entidade.Publicacao` · `Categoria` (`NOTICIA`, `EVENTO`, `PALESTRA`, `COMUNICADO`) |
