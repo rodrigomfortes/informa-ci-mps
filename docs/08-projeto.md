@@ -77,6 +77,8 @@ classDiagram
             +encerrar()$ void
             +adicionarUsuario(nome, email, login, senha, papel) Usuario
             +listarUsuarios() List~Usuario~
+            +editarUsuario(UUID id, DadosDoUsuario dados) Usuario
+            +removerUsuario(UUID id) void
             +publicar(String emailDoAutor, DadosDaPublicacao dados) Publicacao
             +listarFeed() List~Publicacao~
             +editarPublicacao(UUID id, DadosDaPublicacao dados) Publicacao
@@ -90,6 +92,9 @@ classDiagram
             +adicionar(nome, email, login, senha, papel) Usuario
             +listarTodos() List~Usuario~
             +buscarPorEmail(String email) Usuario
+            +buscarPorId(UUID id) Usuario
+            +editar(UUID id, DadosDoUsuario dados) Usuario
+            +remover(UUID id) void
             +quantidade() int
         }
         class GerenciadorDePublicacoes {
@@ -99,12 +104,16 @@ classDiagram
             +buscarPorId(UUID id) Publicacao
             +editar(UUID id, DadosDaPublicacao dados) Publicacao
             +remover(UUID id) void
+            +contarDoAutor(Usuario autor) int
+            +atualizarAutor(Usuario autor) void
             +quantidade() int
         }
         class UsuarioRepositorio {
             <<interface>>
             +salvar(Usuario usuario) void
+            +buscarPorId(UUID id) Optional~Usuario~
             +buscarPorEmail(String email) Optional~Usuario~
+            +remover(UUID id) void
             +existeComEmail(String email) boolean
             +listarTodos() List~Usuario~
         }
@@ -117,6 +126,7 @@ classDiagram
         }
         class EmailJaCadastradoException
         class UsuarioNaoEncontradoException
+        class UsuarioComPublicacoesException
         class PublicacaoNaoEncontradaException
     }
 
@@ -128,6 +138,15 @@ classDiagram
             -String login
             -String senha
             -Papel papel
+            +comDados(DadosDoUsuario novosDados) Usuario
+        }
+        class DadosDoUsuario {
+            <<record>>
+            nome
+            email
+            login
+            senha
+            papel
         }
         class ValidadorDeNome {
             +validar(String nome)$ String
@@ -159,6 +178,7 @@ classDiagram
             -String local
             +Publicacao(Usuario autor, DadosDaPublicacao dados)
             +comDados(DadosDaPublicacao novosDados) Publicacao
+            +comAutor(Usuario autor) Publicacao
         }
         class Categoria {
             <<enumeration>>
@@ -245,6 +265,8 @@ classDiagram
     GerenciadorDeUsuarios ..> EmailJaCadastradoException : lança
     GerenciadorDeUsuarios ..> UsuarioNaoEncontradoException : lança
     GerenciadorDePublicacoes ..> PublicacaoNaoEncontradaException : lança
+    FacadeSingletonController ..> UsuarioComPublicacoesException : lança
+    Usuario ..> DadosDoUsuario : valida
     UsuarioRepositorioEmArquivo ..> PersistenciaException : converte IOException
     PublicacaoRepositorioEmArquivo ..> PersistenciaException : converte IOException
 ```
@@ -262,6 +284,7 @@ classDiagram
 | `EmailJaCadastradoException` | `GerenciadorDeUsuarios` (RF01) | "Não foi possível adicionar: …" |
 | `PublicacaoInvalidaException` | `Publicacao` | "Publicação inválida: …" |
 | `UsuarioNaoEncontradoException` | `GerenciadorDeUsuarios` (autor da publicação) | "Não foi possível publicar: …" |
+| `UsuarioComPublicacoesException` | `FacadeSingletonController` (RF11) | "Não foi possível remover: …" |
 | `PublicacaoNaoEncontradaException` | `GerenciadorDePublicacoes` | "Não foi possível editar: …" / "Não foi possível remover: …" |
 | `PersistenciaException` | repositórios em arquivo | Ao gravar: "Falha ao armazenar …". Ao ler, na inicialização: a mensagem é exibida e `Aplicacao` pergunta de novo o armazenamento. Se a gravação falhar, a cópia em memória volta ao estado anterior |
 

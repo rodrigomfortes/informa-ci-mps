@@ -5,7 +5,7 @@
 
 ## 6.1 Diagrama de casos de uso
 
-O diagrama cobre todo o sistema: gerenciamento de usuários, Módulo de Notícias e Achados e Perdidos. Todos os requisitos funcionais definidos (RF01 a RF09) estão ligados a um caso de uso; a tabela de rastreabilidade abaixo mostra qual.
+O diagrama cobre todo o sistema: gerenciamento de usuários, Módulo de Notícias e Achados e Perdidos. Todos os requisitos funcionais definidos (RF01 a RF11) estão ligados a um caso de uso; a tabela de rastreabilidade abaixo mostra qual.
 
 O diagrama usa Mermaid, que o GitHub desenha direto na página. A versão em UML formal (PlantUML) está em [`casos-de-uso.puml`](casos-de-uso.puml).
 
@@ -33,6 +33,7 @@ flowchart LR
             UC12(["UC12 Remover usuário"])
             UC13(["UC13 Registrar ação na auditoria"])
             UC19(["UC19 Consultar quantidade de entidades"])
+            UC23(["UC23 Editar usuário"])
         end
         subgraph Noticias["Módulo de Notícias"]
             UC14(["UC14 Publicar publicação"])
@@ -69,6 +70,7 @@ flowchart LR
     Administrador --- UC11
     Administrador --- UC12
     Administrador --- UC19
+    Administrador --- UC23
     Publicador -. "especializa" .-> Membro
     Administrador -. "especializa" .-> Membro
 
@@ -110,7 +112,7 @@ Os 3 casos de uso mais relevantes, um do gerenciamento de usuários e dois da en
 | UC09 Excluir própria conta | Membro do CI | — | Visão §2.3; a especificar |
 | UC10 Bloquear ou desbloquear usuário | Administrador | — | Visão §2.3; a especificar |
 | UC11 Alterar papel | Administrador | — | Visão §2.3; a especificar |
-| UC12 Remover usuário | Administrador | — | Visão §2.3; a especificar |
+| UC12 Remover usuário | Administrador | RF11, NF-CON-01 | Implementado (Entrega 2), sem o registro na auditoria (UC13) |
 | UC13 Registrar ação na auditoria | Administrador | — | Visão §2.3; a especificar |
 | UC14 Publicar publicação | Publicador | RF05, NF-CON-01, NF-MAN-01 | Implementado (Sprint 3); [detalhado](UC14-publicar-publicacao.md) |
 | UC15 Consultar feed | Visitante, Membro do CI | RF06 | Implementado (Sprint 3) |
@@ -121,5 +123,6 @@ Os 3 casos de uso mais relevantes, um do gerenciamento de usuários e dois da en
 | UC20 Registrar item no mural | Membro do CI | — | Visão §2.3; a especificar |
 | UC21 Consultar mural | Visitante, Membro do CI | — | Visão §2.3; a especificar |
 | UC22 Marcar item como devolvido | Membro do CI | — | Visão §2.3; a especificar |
+| UC23 Editar usuário | Administrador | RF10, NF-CON-01 | Implementado (Entrega 2) |
 
 **Regra:** IDs de casos de uso **não** são renumerados nem reaproveitados.

@@ -51,6 +51,7 @@ classDiagram
     TelaPrincipal ..> FachadaUnica : quantidade de entidades
     TelaCadastroUsuario ..> FachadaUnica
     TelaListaUsuarios ..> FachadaUnica
+    TelaGerenciarUsuario ..> FachadaUnica : editar e remover
     TelaPublicar ..> FachadaUnica
     TelaFeed ..> FachadaUnica
     TelaEditarPublicacao ..> FachadaUnica
@@ -91,7 +92,8 @@ classDiagram
 | UC05 Confirmar e-mail institucional | ControleCriacaoConta | InterfaceServicoEmail |
 | UC06 Recuperar senha | ControleAutenticacao | TelaRecuperacaoSenha, InterfaceServicoEmail |
 | UC07 Editar perfil · UC08 Alterar senha · UC09 Excluir própria conta | ControlePerfil | TelaPerfil |
-| UC10 Bloquear ou desbloquear · UC11 Alterar papel · UC12 Remover usuário | ControleAdministracao | TelaGerenciarUsuario |
+| UC10 Bloquear ou desbloquear · UC11 Alterar papel | ControleAdministracao | TelaGerenciarUsuario |
+| UC12 Remover usuário · UC23 Editar usuário | FachadaUnica → ControleUsuarios (e ControlePublicacoes, para conferir e atualizar o autor) | TelaGerenciarUsuario |
 | UC13 Registrar ação na auditoria | ControleAuditoria | — |
 | UC14 Publicar publicação | FachadaUnica → ControleUsuarios, ControlePublicacoes | TelaPublicar |
 | UC15 Consultar feed | FachadaUnica → ControlePublicacoes | TelaFeed |
@@ -104,7 +106,7 @@ classDiagram
 | Classe de análise | Classe no código |
 |---|---|
 | TelaPrincipal | `informaci.fronteira.TelaPrincipal` |
-| TelaCadastroUsuario, TelaListaUsuarios | `informaci.fronteira.TelaDeUsuarios` (uma tela de console com as duas opções) |
+| TelaCadastroUsuario, TelaListaUsuarios, TelaGerenciarUsuario | `informaci.fronteira.TelaDeUsuarios` (uma tela de console com o CRUD) |
 | TelaPublicar, TelaFeed, TelaEditarPublicacao | `informaci.fronteira.TelaDePublicacoes` (uma tela de console com o CRUD) |
 | FachadaUnica | `informaci.controle.FacadeSingletonController` |
 | ControleUsuarios | `informaci.controle.GerenciadorDeUsuarios` |
