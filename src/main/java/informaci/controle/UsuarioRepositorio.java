@@ -25,7 +25,7 @@ public interface UsuarioRepositorio {
     /**
      * Busca o usuário com o e-mail indicado.
      *
-     * <p>Espera receber o e-mail já normalizado por {@link Usuario#normalizarEmail(String)}.
+     * <p>Espera receber o e-mail já normalizado por {@link informaci.entidade.ValidadorDeEmail#normalizar(String)}.
      */
     Optional<Usuario> buscarPorEmail(String email);
 

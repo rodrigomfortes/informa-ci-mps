@@ -1,6 +1,8 @@
 package informaci.controle;
 
+import informaci.entidade.EmailInvalidoException;
 import informaci.entidade.LoginInvalidoException;
+import informaci.entidade.NomeInvalidoException;
 import informaci.entidade.Papel;
 import informaci.entidade.SenhaInvalidaException;
 import informaci.entidade.Usuario;
@@ -80,13 +82,13 @@ class GerenciadorDeUsuariosTest {
 
     @Test
     void deve_rejeitar_quando_dados_do_usuario_sao_invalidos() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NomeInvalidoException.class,
                 () -> gerenciador.adicionar("", "ana@academico.ufpb.br", LOGIN, SENHA, Papel.MEMBRO));
     }
 
     @Test
     void nao_deve_persistir_usuario_quando_dados_sao_invalidos() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(EmailInvalidoException.class,
                 () -> gerenciador.adicionar("Ana Souza", "email-invalido", LOGIN, SENHA, Papel.MEMBRO));
 
         assertEquals(0, repositorio.quantidade());

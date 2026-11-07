@@ -139,31 +139,31 @@ class UsuarioTest {
 
     @Test
     void deve_rejeitar_quando_nome_e_nulo() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NomeInvalidoException.class,
                 () -> new Usuario(null, "ana@academico.ufpb.br", LOGIN, SENHA, Papel.MEMBRO));
     }
 
     @Test
     void deve_rejeitar_quando_nome_esta_em_branco() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NomeInvalidoException.class,
                 () -> new Usuario("   ", "ana@academico.ufpb.br", LOGIN, SENHA, Papel.MEMBRO));
     }
 
     @Test
     void deve_rejeitar_quando_email_e_nulo() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(EmailInvalidoException.class,
                 () -> new Usuario("Ana Souza", null, LOGIN, SENHA, Papel.MEMBRO));
     }
 
     @Test
     void deve_rejeitar_quando_email_nao_tem_arroba() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(EmailInvalidoException.class,
                 () -> new Usuario("Ana Souza", "ana.academico.ufpb.br", LOGIN, SENHA, Papel.MEMBRO));
     }
 
     @Test
     void deve_rejeitar_quando_email_nao_tem_dominio() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(EmailInvalidoException.class,
                 () -> new Usuario("Ana Souza", "ana@ufpb", LOGIN, SENHA, Papel.MEMBRO));
     }
 
