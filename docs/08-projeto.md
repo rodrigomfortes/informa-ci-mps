@@ -6,13 +6,16 @@
 
 ```text
 src/main/java/informaci/
-├── Aplicacao.java         ← ponto de entrada: pergunta o armazenamento e monta as camadas
-├── fronteira/             ← telas de console (TelaDeUsuarios)
-├── controle/              ← casos de uso (GerenciadorDeUsuarios), contrato do repositório
-│                            (UsuarioRepositorio) e exceções de regra de negócio
-├── entidade/              ← Usuario, Papel e exceções de validação dos dados
-└── persistencia/          ← implementações do repositório (memória e arquivo binário)
-                             e PersistenciaException
+├── Aplicacao.java         ← ponto de entrada: pergunta o armazenamento, monta os repositórios
+│                            e inicializa a fachada
+├── fronteira/             ← telas de console (TelaPrincipal, TelaDeUsuarios, TelaDePublicacoes)
+├── controle/              ← fachada única (FacadeSingletonController), gerentes dos casos de uso
+│                            (GerenciadorDeUsuarios, GerenciadorDePublicacoes), contratos dos
+│                            repositórios e exceções de regra de negócio
+├── entidade/              ← Usuario, Papel, Publicacao, Categoria, DadosDaPublicacao
+│                            e exceções de validação dos dados
+└── persistencia/          ← implementações dos repositórios (memória e arquivo binário),
+                             ArquivoBinario e PersistenciaException
 src/test/java/informaci/   ← mesma estrutura; testes JUnit por cenário das specs
 ```
 
@@ -22,13 +25,13 @@ src/test/java/informaci/   ← mesma estrutura; testes JUnit por cenário das sp
 | `controle`, `entidade` | `business` (`control`, `model`, `exception`) |
 | `persistencia` | `infra` |
 
-**Regra de dependência:** `fronteira` → `controle` → `entidade` ← `persistencia`. A interface `UsuarioRepositorio` foi declarada em `controle`, e não em `persistencia`: assim as regras de negócio não importam nenhuma classe de armazenamento, e é a persistência que depende delas (NF-MAN-01, [ADR-0001](07-arquitetura/adr/0001-persistencia-substituivel.md)). Só `Aplicacao` conhece todas as camadas, porque é ela que escolhe a implementação.
+**Regra de dependência:** `fronteira` → `controle` → `entidade` ← `persistencia`. As interfaces `UsuarioRepositorio` e `PublicacaoRepositorio` foram declaradas em `controle`, e não em `persistencia`: assim as regras de negócio não importam nenhuma classe de armazenamento, e é a persistência que depende delas (NF-MAN-01, [ADR-0001](07-arquitetura/adr/0001-persistencia-substituivel.md)). A fronteira conversa apenas com a `FacadeSingletonController` ([ADR-0002](07-arquitetura/adr/0002-fachada-unica.md)). Só `Aplicacao` conhece todas as camadas, porque é ela que escolhe a implementação.
 
 ## 2. Diagrama de classes de projeto
 
-### Estado atual: Sprints 1 e 2
+### Estado atual: Sprint 3
 
-Inclui as exceções de validação (S2.2) e os 2 mecanismos de persistência (S2.3).
+Acrescenta à Sprint 2 o CRUD de `Publicacao`, entidade relacionada a `Usuario` (o autor, com papel Publicador), e a fachada única `FacadeSingletonController` (Facade + Singleton), com o método que retorna a quantidade de entidades cadastradas.
 
 ```mermaid
 classDiagram
@@ -36,31 +39,87 @@ classDiagram
 
     class Aplicacao {
         +main(args)$ void
-        -escolherRepositorio(Scanner entrada)$ UsuarioRepositorio
+        -escolherArmazenamento(Scanner entrada)$ Armazenamento
     }
 
     namespace fronteira {
+        class TelaPrincipal {
+            +executar() void
+            -exibirQuantidade() void
+        }
         class TelaDeUsuarios {
-            -GerenciadorDeUsuarios gerenciador
             +executar() void
             -adicionar() void
             -listar() void
         }
+        class TelaDePublicacoes {
+            +executar() void
+            -publicar() void
+            -exibirFeed() void
+            -editar() void
+            -remover() void
+        }
+        class Console {
+            ~ler(String rotulo) String
+            ~escrever(String linha) void
+        }
     }
+
     namespace controle {
+        class FacadeSingletonController {
+            <<Singleton, Facade>>
+            -FacadeSingletonController instancia$
+            -GerenciadorDeUsuarios usuarios
+            -GerenciadorDePublicacoes publicacoes
+            -FacadeSingletonController(UsuarioRepositorio, PublicacaoRepositorio)
+            +inicializar(UsuarioRepositorio, PublicacaoRepositorio)$ FacadeSingletonController
+            +getInstancia()$ FacadeSingletonController
+            +encerrar()$ void
+            +adicionarUsuario(nome, email, login, senha, papel) Usuario
+            +listarUsuarios() List~Usuario~
+            +publicar(String emailDoAutor, DadosDaPublicacao dados) Publicacao
+            +listarFeed() List~Publicacao~
+            +editarPublicacao(UUID id, DadosDaPublicacao dados) Publicacao
+            +removerPublicacao(UUID id) void
+            +quantidadeDeUsuarios() int
+            +quantidadeDePublicacoes() int
+            +quantidadeDeEntidadesCadastradas() int
+        }
         class GerenciadorDeUsuarios {
             -UsuarioRepositorio repositorio
             +adicionar(nome, email, login, senha, papel) Usuario
             +listarTodos() List~Usuario~
+            +buscarPorEmail(String email) Usuario
+            +quantidade() int
+        }
+        class GerenciadorDePublicacoes {
+            -PublicacaoRepositorio repositorio
+            +publicar(Usuario autor, DadosDaPublicacao dados) Publicacao
+            +listarFeed() List~Publicacao~
+            +buscarPorId(UUID id) Publicacao
+            +editar(UUID id, DadosDaPublicacao dados) Publicacao
+            +remover(UUID id) void
+            +quantidade() int
         }
         class UsuarioRepositorio {
             <<interface>>
             +salvar(Usuario usuario) void
+            +buscarPorEmail(String email) Optional~Usuario~
             +existeComEmail(String email) boolean
             +listarTodos() List~Usuario~
         }
+        class PublicacaoRepositorio {
+            <<interface>>
+            +salvar(Publicacao publicacao) void
+            +buscarPorId(UUID id) Optional~Publicacao~
+            +listarTodas() List~Publicacao~
+            +remover(UUID id) void
+        }
         class EmailJaCadastradoException
+        class UsuarioNaoEncontradoException
+        class PublicacaoNaoEncontradaException
     }
+
     namespace entidade {
         class Usuario {
             -UUID id
@@ -69,6 +128,7 @@ classDiagram
             -String login
             -String senha
             -Papel papel
+            +normalizarEmail(String email)$ String
             -validarLogin(login)$ String
             -validarSenha(senha, login, email)$ String
         }
@@ -76,48 +136,103 @@ classDiagram
             <<enumeration>>
             MEMBRO
             ADMINISTRADOR
+            PUBLICADOR
+        }
+        class Publicacao {
+            -UUID id
+            -Usuario autor
+            -LocalDateTime dataDePublicacao
+            -String titulo
+            -String texto
+            -Categoria categoria
+            -LocalDateTime dataHora
+            -String local
+            +Publicacao(Usuario autor, DadosDaPublicacao dados)
+            +comDados(DadosDaPublicacao novosDados) Publicacao
+        }
+        class Categoria {
+            <<enumeration>>
+            NOTICIA
+            EVENTO
+            PALESTRA
+            COMUNICADO
+            +exigeDataELocal() boolean
+        }
+        class DadosDaPublicacao {
+            <<record>>
+            titulo
+            texto
+            categoria
+            dataHora
+            local
         }
         class LoginInvalidoException
         class SenhaInvalidaException
+        class PublicacaoInvalidaException
     }
+
     namespace persistencia {
-        class UsuarioRepositorioEmMemoria {
-            -Map usuarios
-            +quantidade() int
-        }
+        class UsuarioRepositorioEmMemoria
         class UsuarioRepositorioEmArquivo {
             -Path arquivo
-            -Map usuarios
-            -carregar() void
-            -gravar() void
+        }
+        class PublicacaoRepositorioEmMemoria
+        class PublicacaoRepositorioEmArquivo {
+            -Path arquivo
+        }
+        class ArquivoBinario {
+            ~ler(Path arquivo, Class tipo)$ List
+            ~gravar(Path arquivo, List objetos)$ void
         }
         class PersistenciaException
     }
 
-    class IllegalArgumentException
-    class RuntimeException
-
-    Aplicacao ..> TelaDeUsuarios : cria
-    Aplicacao ..> UsuarioRepositorioEmMemoria : cria (opção 1)
+    Aplicacao ..> FacadeSingletonController : inicializa
+    Aplicacao ..> TelaPrincipal : cria
     Aplicacao ..> UsuarioRepositorioEmArquivo : cria (opção 2)
-    TelaDeUsuarios --> GerenciadorDeUsuarios
+    Aplicacao ..> PublicacaoRepositorioEmArquivo : cria (opção 2)
+
+    TelaPrincipal --> TelaDeUsuarios
+    TelaPrincipal --> TelaDePublicacoes
+    TelaPrincipal --> FacadeSingletonController
+    TelaDeUsuarios --> FacadeSingletonController
+    TelaDePublicacoes --> FacadeSingletonController
+    TelaDeUsuarios --> Console
+    TelaDePublicacoes --> Console
+
+    FacadeSingletonController --> FacadeSingletonController : instancia única
+    FacadeSingletonController *-- GerenciadorDeUsuarios
+    FacadeSingletonController *-- GerenciadorDePublicacoes
     GerenciadorDeUsuarios --> UsuarioRepositorio
+    GerenciadorDePublicacoes --> PublicacaoRepositorio
     GerenciadorDeUsuarios ..> Usuario : cria
+    GerenciadorDePublicacoes ..> Publicacao : cria
+
     Usuario --> Papel
+    Publicacao "*" --> "1" Usuario : autor
+    Publicacao --> Categoria
+    Publicacao ..> DadosDaPublicacao : valida
+
     UsuarioRepositorio <|.. UsuarioRepositorioEmMemoria
     UsuarioRepositorio <|.. UsuarioRepositorioEmArquivo
+    PublicacaoRepositorio <|.. PublicacaoRepositorioEmMemoria
+    PublicacaoRepositorio <|.. PublicacaoRepositorioEmArquivo
+    UsuarioRepositorioEmArquivo ..> ArquivoBinario
+    PublicacaoRepositorioEmArquivo ..> ArquivoBinario
 
     Usuario ..> LoginInvalidoException : lança
     Usuario ..> SenhaInvalidaException : lança
+    Publicacao ..> PublicacaoInvalidaException : lança
     GerenciadorDeUsuarios ..> EmailJaCadastradoException : lança
+    GerenciadorDeUsuarios ..> UsuarioNaoEncontradoException : lança
+    GerenciadorDePublicacoes ..> PublicacaoNaoEncontradaException : lança
     UsuarioRepositorioEmArquivo ..> PersistenciaException : converte IOException
-    IllegalArgumentException <|-- LoginInvalidoException
-    IllegalArgumentException <|-- SenhaInvalidaException
-    RuntimeException <|-- EmailJaCadastradoException
-    RuntimeException <|-- PersistenciaException
+    PublicacaoRepositorioEmArquivo ..> PersistenciaException : converte IOException
 ```
 
-**Tratamento das exceções** (`TelaDeUsuarios.adicionar`): cada exceção vira uma mensagem para o usuário, e o sistema continua em execução (NF-USA-01, NF-CON-01).
+> Para não poluir o diagrama, as superclasses das exceções foram omitidas: `LoginInvalidoException`, `SenhaInvalidaException` e `PublicacaoInvalidaException` estendem `IllegalArgumentException`; as demais estendem `RuntimeException`.
+
+**Tratamento das exceções** (`TelaDeUsuarios` e `TelaDePublicacoes`): cada exceção vira uma mensagem para o usuário, e o sistema continua em execução (NF-USA-01, NF-CON-01).
 
 | Exceção | Lançada por | Mensagem exibida |
 |---|---|---|
@@ -125,7 +240,10 @@ classDiagram
 | `SenhaInvalidaException` | `Usuario` (RF03) | "Senha inválida: …" |
 | `IllegalArgumentException` | `Usuario` (nome ou e-mail, RF01) | "Não foi possível adicionar: …" |
 | `EmailJaCadastradoException` | `GerenciadorDeUsuarios` (RF01) | "Não foi possível adicionar: …" |
-| `PersistenciaException` | `UsuarioRepositorioEmArquivo` | Ao gravar: "Falha ao armazenar o usuário: …". Ao ler, na inicialização: a mensagem é exibida e `Aplicacao` pergunta de novo o armazenamento |
+| `PublicacaoInvalidaException` | `Publicacao` | "Publicação inválida: …" |
+| `UsuarioNaoEncontradoException` | `GerenciadorDeUsuarios` (autor da publicação) | "Não foi possível publicar: …" |
+| `PublicacaoNaoEncontradaException` | `GerenciadorDePublicacoes` | "Não foi possível editar: …" / "Não foi possível remover: …" |
+| `PersistenciaException` | repositórios em arquivo | Ao gravar: "Falha ao armazenar …". Ao ler, na inicialização: a mensagem é exibida e `Aplicacao` pergunta de novo o armazenamento. Se a gravação falhar, a cópia em memória volta ao estado anterior |
 
 ## 3. Padrões de projeto utilizados
 
@@ -133,8 +251,8 @@ Preencha uma linha por padrão aplicado. Cada padrão relevante também tem um A
 
 | Padrão | Sprint | Classes participantes (papel no padrão) | Problema que resolve no projeto | ADR |
 |---|---|---|---|---|
-| Singleton | S3 | | | |
-| Facade | S3 | | | |
+| Singleton | S3 | `FacadeSingletonController` (Singleton: construtor privado, `instancia` estática, `inicializar` e `getInstancia`) | Garante que todas as telas usem os mesmos gerentes e os mesmos dados. Como o armazenamento só é escolhido ao iniciar, a instância é criada por `inicializar` e não de forma preguiçosa | [ADR-0002](07-arquitetura/adr/0002-fachada-unica.md) |
+| Facade | S3 | `FacadeSingletonController` (fachada); `GerenciadorDeUsuarios`, `GerenciadorDePublicacoes` (subsistema); `TelaPrincipal`, `TelaDeUsuarios`, `TelaDePublicacoes` (clientes) | A fronteira depende de uma única classe da camada de negócio, que também combina gerentes quando a operação envolve duas entidades (publicar em nome de um usuário, contar as entidades cadastradas) | [ADR-0002](07-arquitetura/adr/0002-fachada-unica.md) |
 | Repository | S4 | | | |
 | Factory Method / Abstract Factory | S4 | | | |
 | Adapter | S4 | | | |

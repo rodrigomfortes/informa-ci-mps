@@ -35,7 +35,7 @@ mvn compile
 java -cp target/classes informaci.Aplicacao
 ```
 
-Ao iniciar, o sistema pergunta onde guardar os usuários: em memória (os dados se perdem ao encerrar) ou no arquivo binário `usuarios.bin`.
+Ao iniciar, o sistema pergunta onde guardar os dados: em memória (os dados se perdem ao encerrar) ou nos arquivos binários `usuarios.bin` e `publicacoes.bin`. Em seguida, o menu principal leva às telas de usuários e de publicações e mostra a quantidade de entidades cadastradas.
 
 Para validar a especificação (Node.js 20.19+):
 

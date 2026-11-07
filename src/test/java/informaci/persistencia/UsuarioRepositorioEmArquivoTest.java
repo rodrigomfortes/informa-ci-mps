@@ -9,6 +9,8 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -78,5 +80,33 @@ class UsuarioRepositorioEmArquivoTest {
         Usuario usuario = new Usuario("Ana Souza", "ana@academico.ufpb.br", LOGIN, SENHA, Papel.MEMBRO);
 
         assertThrows(PersistenciaException.class, () -> repositorio.salvar(usuario));
+    }
+
+    @Test
+    void nao_deve_manter_o_usuario_quando_a_gravacao_falha() {
+        UsuarioRepositorioEmArquivo repositorio =
+                new UsuarioRepositorioEmArquivo(pasta.resolve("inexistente/usuarios.bin"));
+        Usuario usuario = new Usuario("Ana Souza", "ana@academico.ufpb.br", LOGIN, SENHA, Papel.MEMBRO);
+
+        assertThrows(PersistenciaException.class, () -> repositorio.salvar(usuario));
+
+        assertTrue(repositorio.listarTodos().isEmpty());
+        assertFalse(repositorio.existeComEmail("ana@academico.ufpb.br"));
+    }
+
+    @Test
+    void deve_regravar_o_arquivo_sem_deixar_arquivos_temporarios() throws IOException {
+        Usuario ana = new Usuario("Ana Souza", "ana@academico.ufpb.br", LOGIN, SENHA, Papel.MEMBRO);
+        Usuario bruno = new Usuario("Bruno Lima", "bruno@academico.ufpb.br", LOGIN, SENHA, Papel.MEMBRO);
+        UsuarioRepositorioEmArquivo repositorio = new UsuarioRepositorioEmArquivo(arquivo);
+        repositorio.salvar(ana);
+        repositorio.salvar(bruno);
+
+        UsuarioRepositorioEmArquivo reaberto = new UsuarioRepositorioEmArquivo(arquivo);
+
+        assertEquals(List.of(ana, bruno), reaberto.listarTodos());
+        try (Stream<Path> arquivosDaPasta = Files.list(pasta)) {
+            assertEquals(1, arquivosDaPasta.count());
+        }
     }
 }

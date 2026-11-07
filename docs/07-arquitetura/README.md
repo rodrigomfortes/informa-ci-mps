@@ -8,6 +8,7 @@
 | ADR | Decisão | Requisitos |
 |---|---|---|
 | [ADR-0001](adr/0001-persistencia-substituivel.md) | Tornar o mecanismo de persistência substituível | NF-MAN-01, NF-CON-01, NF-CON-02 |
+| [ADR-0002](adr/0002-fachada-unica.md) | Fachada única (Facade + Singleton) para a camada de negócio | NF-MAN-01 |
 
 ## Como cada requisito não funcional é atendido (parcial — Sprints 1 e 2)
 
