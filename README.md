@@ -95,8 +95,7 @@ O aviso *"should contain SHALL or MUST"* é esperado: escrevemos em português, 
 │   └── changes/                  ← mudanças propostas, ainda não incorporadas
 │       └── archive/              ← mudanças concluídas (histórico)
 └── .github/
-    ├── workflows/openspec.yml    ← valida as specs a cada push e PR
-    └── pull_request_template.md
+    └── workflows/openspec.yml    ← valida as specs a cada push e PR
 ```
 
 ---
