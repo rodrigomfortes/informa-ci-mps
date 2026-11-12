@@ -134,6 +134,8 @@ classDiagram
             +listarFeed() List~Publicacao~
             +editarPublicacao(UUID id, DadosDaPublicacao dados) Publicacao
             +removerPublicacao(UUID id) void
+            +quantidadeDeUsuarios() int
+            +quantidadeDePublicacoes() int
             +quantidadeDeEntidadesCadastradas() int
         }
         class GerenciadorDeUsuarios {
