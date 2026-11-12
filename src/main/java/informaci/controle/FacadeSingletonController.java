@@ -5,6 +5,8 @@ import informaci.entidade.DadosDoUsuario;
 import informaci.entidade.Papel;
 import informaci.entidade.Publicacao;
 import informaci.entidade.Usuario;
+import informaci.log.NullLog;
+import informaci.log.ServicoDeLog;
 
 import java.util.List;
 import java.util.Objects;
@@ -22,6 +24,10 @@ import java.util.UUID;
  * telas enxerguem os mesmos gerentes e os mesmos dados. Como o armazenamento
  * só é conhecido depois que o usuário o escolhe, a instância é criada uma vez
  * por {@link #inicializar} e obtida depois por {@link #getInstancia()}.
+ *
+ * <p>Recebe um {@link ServicoDeLog} e o repassa aos gerenciadores, mantendo
+ * a dependência da lib concreta isolada no ponto de composição (a
+ * {@link informaci.Aplicacao}).
  */
 public final class FacadeSingletonController {
 
@@ -30,25 +36,43 @@ public final class FacadeSingletonController {
     private final GerenciadorDeUsuarios usuarios;
     private final GerenciadorDePublicacoes publicacoes;
 
-    private FacadeSingletonController(UsuarioRepositorio usuarios, PublicacaoRepositorio publicacoes) {
-        this.usuarios = new GerenciadorDeUsuarios(usuarios);
-        this.publicacoes = new GerenciadorDePublicacoes(publicacoes);
+    private FacadeSingletonController(
+            UsuarioRepositorio usuarios,
+            PublicacaoRepositorio publicacoes,
+            ServicoDeLog log) {
+        this.usuarios = new GerenciadorDeUsuarios(usuarios, log);
+        this.publicacoes = new GerenciadorDePublicacoes(publicacoes, log);
     }
 
     /**
-     * Cria a instância única com os repositórios escolhidos.
+     * Cria a instância única com os repositórios e o serviço de log escolhidos.
      *
      * @throws IllegalStateException se a fachada já tiver sido inicializada
      */
     public static synchronized FacadeSingletonController inicializar(
-            UsuarioRepositorio usuarios, PublicacaoRepositorio publicacoes) {
+            UsuarioRepositorio usuarios,
+            PublicacaoRepositorio publicacoes,
+            ServicoDeLog log) {
         if (instancia != null) {
             throw new IllegalStateException("A fachada já foi inicializada.");
         }
         instancia = new FacadeSingletonController(
                 Objects.requireNonNull(usuarios, "O repositório de usuários é obrigatório."),
-                Objects.requireNonNull(publicacoes, "O repositório de publicações é obrigatório."));
+                Objects.requireNonNull(publicacoes, "O repositório de publicações é obrigatório."),
+                Objects.requireNonNull(log, "O serviço de log é obrigatório."));
         return instancia;
+    }
+
+    /**
+     * Cria a instância única sem log (compatibilidade com código existente).
+     *
+     * @throws IllegalStateException se a fachada já tiver sido inicializada
+     * @deprecated prefira {@link #inicializar(UsuarioRepositorio, PublicacaoRepositorio, ServicoDeLog)}
+     */
+    @Deprecated
+    public static synchronized FacadeSingletonController inicializar(
+            UsuarioRepositorio usuarios, PublicacaoRepositorio publicacoes) {
+        return inicializar(usuarios, publicacoes, new NullLog());
     }
 
     /**
