@@ -89,7 +89,7 @@ Cada data é uma **release**: PR de `develop` → `main` com a tag indicada (ver
 
 ### Código
 
-- [ ] **S4.2** Repository para todas as entidades; Factory Method ou Abstract Factory para criar entidades ou escolher o tipo de repositório
+- [x] **S4.2** Repository para todas as entidades; Factory Method ou Abstract Factory para criar entidades ou escolher o tipo de repositório
 - [ ] **S4.3** Adapter num cenário do projeto (sugestão: biblioteca de log)
 - [ ] **S4.4** Template Method na camada business para gerar relatórios de acesso em mais de um formato (ex.: HTML e PDF)
 
