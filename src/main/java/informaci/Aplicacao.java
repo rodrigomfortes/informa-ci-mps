@@ -4,6 +4,8 @@ import informaci.controle.FacadeSingletonController;
 import informaci.controle.PublicacaoRepositorio;
 import informaci.controle.UsuarioRepositorio;
 import informaci.fronteira.TelaPrincipal;
+import informaci.log.JulLogAdapter;
+import informaci.log.ServicoDeLog;
 import informaci.persistencia.PersistenciaException;
 import informaci.persistencia.PublicacaoRepositorioEmArquivo;
 import informaci.persistencia.PublicacaoRepositorioEmMemoria;
@@ -20,6 +22,11 @@ import java.util.Scanner;
  * escolhidos e inicializa com eles a fachada única. É a única classe que
  * conhece todas as camadas ao mesmo tempo, justamente para que nenhuma delas
  * precise conhecer a implementação concreta de armazenamento.
+ *
+ * <p>Também é o único ponto que conhece a biblioteca de log concreta: cria o
+ * {@link JulLogAdapter} e o injeta na fachada, que o repassa aos gerenciadores.
+ * Graças ao padrão Adapter, o restante do sistema depende apenas de
+ * {@link ServicoDeLog}.
  */
 public final class Aplicacao {
 
@@ -32,13 +39,15 @@ public final class Aplicacao {
     public static void main(String[] args) {
         Scanner entrada = new Scanner(System.in);
 
+        ServicoDeLog log = new JulLogAdapter(Aplicacao.class.getName());
+
         Armazenamento armazenamento = escolherArmazenamento(entrada);
         if (armazenamento == null) {
             return;
         }
 
         FacadeSingletonController fachada =
-                FacadeSingletonController.inicializar(armazenamento.usuarios(), armazenamento.publicacoes());
+                FacadeSingletonController.inicializar(armazenamento.usuarios(), armazenamento.publicacoes(), log);
         new TelaPrincipal(fachada, entrada, System.out).executar();
         FacadeSingletonController.encerrar();
     }
