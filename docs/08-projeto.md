@@ -29,20 +29,59 @@ src/test/java/informaci/   ← mesma estrutura; testes JUnit por cenário das sp
 
 ## 2. Diagrama de classes de projeto
 
-### Estado atual: Sprint 3
+### Estado atual: Sprint 4 — camadas business e infra separadas (S4.1)
 
-Acrescenta à Sprint 2 o CRUD de `Publicacao`, entidade relacionada a `Usuario` (o autor, com papel Publicador), e a fachada única `FacadeSingletonController` (Facade + Singleton), com o método que retorna a quantidade de entidades cadastradas.
+Refaz o diagrama da Sprint 3 agrupando as classes nas camadas da disciplina (`ui`, `business`, `infra`) e tornando explícita a comunicação entre **business** e **infra** para as duas entidades do projeto, `Usuario` e `Publicacao`.
+
+**Visão por camadas**
+
+```mermaid
+flowchart LR
+    subgraph ui["ui · pacote fronteira"]
+        T["TelaPrincipal<br/>TelaDeUsuarios<br/>TelaDePublicacoes"]
+    end
+    subgraph business["business · pacotes controle + entidade"]
+        F["FacadeSingletonController"]
+        G["GerenciadorDeUsuarios<br/>GerenciadorDePublicacoes"]
+        P["«interface»<br/>UsuarioRepositorio<br/>PublicacaoRepositorio"]
+        E["Usuario · Publicacao"]
+        F --> G --> P
+        G --> E
+        P -.->|armazena| E
+    end
+    subgraph infra["infra · pacote persistencia"]
+        R["UsuarioRepositorioEmMemoria / EmArquivo<br/>PublicacaoRepositorioEmMemoria / EmArquivo<br/>ArquivoBinario · PersistenciaException"]
+    end
+    T --> F
+    R -. "implementa" .-> P
+    R -.->|usa| E
+```
+
+**Como as camadas se comunicam**
+
+| Entidade | Business (usa) | Contrato entre as camadas | Infra (implementa) |
+|---|---|---|---|
+| `Usuario` | `GerenciadorDeUsuarios` | `UsuarioRepositorio` | `UsuarioRepositorioEmMemoria`, `UsuarioRepositorioEmArquivo` |
+| `Publicacao` | `GerenciadorDePublicacoes` | `PublicacaoRepositorio` | `PublicacaoRepositorioEmMemoria`, `PublicacaoRepositorioEmArquivo` |
+
+- **business → infra:** nenhuma classe de `business` referencia uma classe de `infra`. Os gerentes só enxergam a interface do repositório (que pertence a `business.controle`).
+- **infra → business:** `infra` implementa as interfaces e manipula as entidades (`Usuario`, `Publicacao`); é a única direção de dependência entre as camadas (inversão de dependência, [ADR-0001](07-arquitetura/adr/0001-persistencia-substituivel.md)).
+- **Detalhes de armazenamento** (`ArquivoBinario`, `IOException`, `PersistenciaException`) ficam inteiramente em `infra`; `business` não precisa conhecê-los.
+- **`Aplicacao`** é a raiz de composição: o único ponto que conhece as três camadas, pois escolhe a implementação de repositório e a entrega à fachada.
+
+**Diagrama de classes**
 
 ```mermaid
 classDiagram
-    direction LR
+    direction TB
 
     class Aplicacao {
+        <<composition root>>
         +main(args)$ void
         -escolherArmazenamento(Scanner entrada)$ Armazenamento
     }
 
-    namespace fronteira {
+    namespace ui.fronteira {
         class TelaPrincipal {
             +executar() void
             -exibirQuantidade() void
@@ -65,7 +104,7 @@ classDiagram
         }
     }
 
-    namespace controle {
+    namespace business.controle {
         class FacadeSingletonController {
             <<Singleton, Facade>>
             -FacadeSingletonController instancia$
@@ -109,16 +148,16 @@ classDiagram
             +quantidade() int
         }
         class UsuarioRepositorio {
-            <<interface>>
+            <<interface · porta da persistência>>
             +salvar(Usuario usuario) void
             +buscarPorId(UUID id) Optional~Usuario~
             +buscarPorEmail(String email) Optional~Usuario~
-            +remover(UUID id) void
             +existeComEmail(String email) boolean
             +listarTodos() List~Usuario~
+            +remover(UUID id) void
         }
         class PublicacaoRepositorio {
-            <<interface>>
+            <<interface · porta da persistência>>
             +salvar(Publicacao publicacao) void
             +buscarPorId(UUID id) Optional~Publicacao~
             +listarTodas() List~Publicacao~
@@ -130,8 +169,9 @@ classDiagram
         class PublicacaoNaoEncontradaException
     }
 
-    namespace entidade {
+    namespace business.entidade {
         class Usuario {
+            <<Serializable>>
             -UUID id
             -String nome
             -String email
@@ -148,6 +188,42 @@ classDiagram
             senha
             papel
         }
+        class Papel {
+            <<enumeration>>
+            MEMBRO
+            ADMINISTRADOR
+            PUBLICADOR
+        }
+        class Publicacao {
+            <<Serializable>>
+            -UUID id
+            -Usuario autor
+            -LocalDateTime dataDePublicacao
+            -String titulo
+            -String texto
+            -Categoria categoria
+            -LocalDateTime dataHora
+            -String local
+            +Publicacao(Usuario autor, DadosDaPublicacao dados)
+            +comDados(DadosDaPublicacao novosDados) Publicacao
+            +comAutor(Usuario autor) Publicacao
+        }
+        class DadosDaPublicacao {
+            <<record>>
+            titulo
+            texto
+            categoria
+            dataHora
+            local
+        }
+        class Categoria {
+            <<enumeration>>
+            NOTICIA
+            EVENTO
+            PALESTRA
+            COMUNICADO
+            +exigeDataELocal() boolean
+        }
         class ValidadorDeNome {
             +validar(String nome)$ String
         }
@@ -161,41 +237,6 @@ classDiagram
         class ValidadorDeSenha {
             +validar(String senha, String login, String email)$ String
         }
-        class Papel {
-            <<enumeration>>
-            MEMBRO
-            ADMINISTRADOR
-            PUBLICADOR
-        }
-        class Publicacao {
-            -UUID id
-            -Usuario autor
-            -LocalDateTime dataDePublicacao
-            -String titulo
-            -String texto
-            -Categoria categoria
-            -LocalDateTime dataHora
-            -String local
-            +Publicacao(Usuario autor, DadosDaPublicacao dados)
-            +comDados(DadosDaPublicacao novosDados) Publicacao
-            +comAutor(Usuario autor) Publicacao
-        }
-        class Categoria {
-            <<enumeration>>
-            NOTICIA
-            EVENTO
-            PALESTRA
-            COMUNICADO
-            +exigeDataELocal() boolean
-        }
-        class DadosDaPublicacao {
-            <<record>>
-            titulo
-            texto
-            categoria
-            dataHora
-            local
-        }
         class NomeInvalidoException
         class EmailInvalidoException
         class LoginInvalidoException
@@ -203,7 +244,7 @@ classDiagram
         class PublicacaoInvalidaException
     }
 
-    namespace persistencia {
+    namespace infra.persistencia {
         class UsuarioRepositorioEmMemoria
         class UsuarioRepositorioEmArquivo {
             -Path arquivo
@@ -219,11 +260,7 @@ classDiagram
         class PersistenciaException
     }
 
-    Aplicacao ..> FacadeSingletonController : inicializa
-    Aplicacao ..> TelaPrincipal : cria
-    Aplicacao ..> UsuarioRepositorioEmArquivo : cria (opção 2)
-    Aplicacao ..> PublicacaoRepositorioEmArquivo : cria (opção 2)
-
+    %% ── ui → business (somente pela fachada) ──
     TelaPrincipal --> TelaDeUsuarios
     TelaPrincipal --> TelaDePublicacoes
     TelaPrincipal --> FacadeSingletonController
@@ -232,26 +269,16 @@ classDiagram
     TelaDeUsuarios --> Console
     TelaDePublicacoes --> Console
 
-    FacadeSingletonController --> FacadeSingletonController : instancia única
+    %% ── dentro de business ──
     FacadeSingletonController *-- GerenciadorDeUsuarios
     FacadeSingletonController *-- GerenciadorDePublicacoes
-    GerenciadorDeUsuarios --> UsuarioRepositorio
-    GerenciadorDePublicacoes --> PublicacaoRepositorio
     GerenciadorDeUsuarios ..> Usuario : cria
     GerenciadorDePublicacoes ..> Publicacao : cria
-
     Usuario --> Papel
     Publicacao "*" --> "1" Usuario : autor
     Publicacao --> Categoria
+    Usuario ..> DadosDoUsuario : valida
     Publicacao ..> DadosDaPublicacao : valida
-
-    UsuarioRepositorio <|.. UsuarioRepositorioEmMemoria
-    UsuarioRepositorio <|.. UsuarioRepositorioEmArquivo
-    PublicacaoRepositorio <|.. PublicacaoRepositorioEmMemoria
-    PublicacaoRepositorio <|.. PublicacaoRepositorioEmArquivo
-    UsuarioRepositorioEmArquivo ..> ArquivoBinario
-    PublicacaoRepositorioEmArquivo ..> ArquivoBinario
-
     Usuario ..> ValidadorDeNome
     Usuario ..> ValidadorDeEmail
     Usuario ..> ValidadorDeLogin
@@ -266,9 +293,30 @@ classDiagram
     GerenciadorDeUsuarios ..> UsuarioNaoEncontradoException : lança
     GerenciadorDePublicacoes ..> PublicacaoNaoEncontradaException : lança
     FacadeSingletonController ..> UsuarioComPublicacoesException : lança
-    Usuario ..> DadosDoUsuario : valida
+
+    %% ── business → infra: SOMENTE através das interfaces (porta) ──
+    GerenciadorDeUsuarios --> UsuarioRepositorio : usa
+    GerenciadorDePublicacoes --> PublicacaoRepositorio : usa
+    UsuarioRepositorio ..> Usuario : armazena
+    PublicacaoRepositorio ..> Publicacao : armazena
+
+    %% ── infra → business: implementa as portas (inversão de dependência) ──
+    UsuarioRepositorio <|.. UsuarioRepositorioEmMemoria
+    UsuarioRepositorio <|.. UsuarioRepositorioEmArquivo
+    PublicacaoRepositorio <|.. PublicacaoRepositorioEmMemoria
+    PublicacaoRepositorio <|.. PublicacaoRepositorioEmArquivo
+    UsuarioRepositorioEmArquivo ..> ArquivoBinario
+    PublicacaoRepositorioEmArquivo ..> ArquivoBinario
     UsuarioRepositorioEmArquivo ..> PersistenciaException : converte IOException
     PublicacaoRepositorioEmArquivo ..> PersistenciaException : converte IOException
+
+    %% ── composition root: único ponto que conhece as três camadas ──
+    Aplicacao ..> TelaPrincipal : cria
+    Aplicacao ..> FacadeSingletonController : inicializa com os repositórios
+    Aplicacao ..> UsuarioRepositorioEmMemoria : cria (opção 1)
+    Aplicacao ..> PublicacaoRepositorioEmMemoria : cria (opção 1)
+    Aplicacao ..> UsuarioRepositorioEmArquivo : cria (opção 2)
+    Aplicacao ..> PublicacaoRepositorioEmArquivo : cria (opção 2)
 ```
 
 > Para não poluir o diagrama, as superclasses das exceções foram omitidas: `NomeInvalidoException`, `EmailInvalidoException`, `LoginInvalidoException`, `SenhaInvalidaException` e `PublicacaoInvalidaException` estendem `IllegalArgumentException`; as demais estendem `RuntimeException`.
