@@ -8,6 +8,8 @@ import informaci.entidade.Papel;
 import informaci.entidade.SenhaInvalidaException;
 import informaci.entidade.Usuario;
 import informaci.entidade.ValidadorDeEmail;
+import informaci.log.NullLog;
+import informaci.log.ServicoDeLog;
 
 import java.util.List;
 import java.util.Objects;
@@ -19,14 +21,38 @@ import java.util.UUID;
  * <p>Recebe o repositório pelo construtor em vez de instanciá-lo: assim o
  * controle não conhece a implementação concreta de armazenamento, e os testes
  * podem fornecer a que lhes convier.
+ *
+ * <p>Recebe também um {@link ServicoDeLog} pelo construtor. Graças ao padrão
+ * Adapter, esta classe desconhece a biblioteca de log concreta: ela só conhece
+ * a interface {@link ServicoDeLog}, e o adapter ({@code JulLogAdapter}) cuida
+ * de traduzir as chamadas para a API da JUL — ou qualquer outra lib no futuro.
  */
 public class GerenciadorDeUsuarios {
 
     private final UsuarioRepositorio repositorio;
+    private final ServicoDeLog log;
 
-    public GerenciadorDeUsuarios(UsuarioRepositorio repositorio) {
+    /**
+     * Cria o gerenciador com repositório e serviço de log.
+     *
+     * @param repositorio repositório de usuários (obrigatório)
+     * @param log         serviço de log a usar; use {@link NullLog} para silenciar
+     */
+    public GerenciadorDeUsuarios(UsuarioRepositorio repositorio, ServicoDeLog log) {
         this.repositorio = Objects.requireNonNull(
                 repositorio, "O repositório de usuários é obrigatório.");
+        this.log = Objects.requireNonNull(log, "O serviço de log é obrigatório.");
+    }
+
+    /**
+     * Cria o gerenciador sem log (compatibilidade com código existente).
+     *
+     * @param repositorio repositório de usuários (obrigatório)
+     * @deprecated prefira o construtor com {@link ServicoDeLog} explícito
+     */
+    @Deprecated
+    public GerenciadorDeUsuarios(UsuarioRepositorio repositorio) {
+        this(repositorio, new NullLog());
     }
 
     /**
@@ -48,10 +74,12 @@ public class GerenciadorDeUsuarios {
         Usuario usuario = new Usuario(nome, email, login, senha, papel);
 
         if (repositorio.existeComEmail(usuario.getEmail())) {
+            log.aviso("Tentativa de cadastro com e-mail já existente: " + usuario.getEmail());
             throw new EmailJaCadastradoException(usuario.getEmail());
         }
 
         repositorio.salvar(usuario);
+        log.info("Usuário adicionado: " + usuario.getLogin() + " (" + usuario.getId() + ")");
         return usuario;
     }
 
@@ -93,9 +121,11 @@ public class GerenciadorDeUsuarios {
         repositorio.buscarPorEmail(editado.getEmail())
                 .filter(outro -> !outro.equals(editado))
                 .ifPresent(outro -> {
+                    log.aviso("Tentativa de edição com e-mail já existente: " + editado.getEmail());
                     throw new EmailJaCadastradoException(editado.getEmail());
                 });
         repositorio.salvar(editado);
+        log.info("Usuário editado: " + editado.getLogin() + " (" + editado.getId() + ")");
         return editado;
     }
 
@@ -105,6 +135,7 @@ public class GerenciadorDeUsuarios {
     public void remover(UUID id) {
         buscarPorId(id);
         repositorio.remover(id);
+        log.info("Usuário removido: " + id);
     }
 
     public int quantidade() {
