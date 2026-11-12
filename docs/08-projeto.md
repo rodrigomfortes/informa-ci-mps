@@ -110,6 +110,7 @@ classDiagram
             -FacadeSingletonController instancia$
             -GerenciadorDeUsuarios usuarios
             -GerenciadorDePublicacoes publicacoes
+            -FacadeSingletonController(UsuarioRepositorio, PublicacaoRepositorio)
             +inicializar(UsuarioRepositorio, PublicacaoRepositorio)$ FacadeSingletonController
             +getInstancia()$ FacadeSingletonController
             +encerrar()$ void
@@ -121,6 +122,8 @@ classDiagram
             +listarFeed() List~Publicacao~
             +editarPublicacao(UUID id, DadosDaPublicacao dados) Publicacao
             +removerPublicacao(UUID id) void
+            +quantidadeDeUsuarios() int
+            +quantidadeDePublicacoes() int
             +quantidadeDeEntidadesCadastradas() int
         }
         class GerenciadorDeUsuarios {
@@ -201,6 +204,7 @@ classDiagram
             -Categoria categoria
             -LocalDateTime dataHora
             -String local
+            +Publicacao(Usuario autor, DadosDaPublicacao dados)
             +comDados(DadosDaPublicacao novosDados) Publicacao
             +comAutor(Usuario autor) Publicacao
         }
