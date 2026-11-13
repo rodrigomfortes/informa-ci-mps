@@ -99,6 +99,7 @@ classDiagram
         class TelaPrincipal {
             +executar() void
             -exibirQuantidade() void
+            -gerarRelatorioDeAcessos() void
         }
         class TelaDeUsuarios {
             +executar() void
@@ -124,9 +125,10 @@ classDiagram
             -FacadeSingletonController instancia$
             -GerenciadorDeUsuarios usuarios
             -GerenciadorDePublicacoes publicacoes
-            +inicializar(FabricaDeRepositorios fabrica, ServicoDeLog log, RegistroDeAcessoRepositorio repoAcessos)$ FacadeSingletonController
+            -GerenciadorDeAcessos acessos
+            +inicializar(FabricaDeRepositorios fabrica, ServicoDeLog log)$ FacadeSingletonController
             +inicializar(FabricaDeRepositorios fabrica)$ FacadeSingletonController
-            ~inicializar(UsuarioRepositorio, PublicacaoRepositorio)$ FacadeSingletonController
+            ~inicializar(UsuarioRepositorio, PublicacaoRepositorio, RegistroDeAcessoRepositorio)$ FacadeSingletonController
             +getInstancia()$ FacadeSingletonController
             +encerrar()$ void
             +adicionarUsuario(nome, email, login, senha, papel) Usuario
@@ -140,7 +142,7 @@ classDiagram
             +quantidadeDeUsuarios() int
             +quantidadeDePublicacoes() int
             +quantidadeDeEntidadesCadastradas() int
-            +gerarRelatorioDeAcessos()
+            +gerarRelatorioDeAcessos(FormatoDeRelatorio formato) byte[]
         }
         class GerenciadorDeUsuarios {
             -UsuarioRepositorio repositorio
@@ -183,6 +185,7 @@ classDiagram
             <<interface · Abstract Factory>>
             +criarRepositorioDeUsuarios() UsuarioRepositorio
             +criarRepositorioDePublicacoes() PublicacaoRepositorio
+            +criarRepositorioDeAcessos() RegistroDeAcessoRepositorio
         }
         class ServicoDeLog {
             <<interface · Adapter: Target>>
@@ -301,11 +304,13 @@ classDiagram
         class FabricaDeRepositoriosEmMemoria {
             +criarRepositorioDeUsuarios() UsuarioRepositorio
             +criarRepositorioDePublicacoes() PublicacaoRepositorio
+            +criarRepositorioDeAcessos() RegistroDeAcessoRepositorio
         }
         class FabricaDeRepositoriosEmArquivo {
             -Path pasta
             +criarRepositorioDeUsuarios() UsuarioRepositorio
             +criarRepositorioDePublicacoes() PublicacaoRepositorio
+            +criarRepositorioDeAcessos() RegistroDeAcessoRepositorio
         }
         class TipoDeArmazenamento {
             <<enumeration · Factory Method>>
@@ -390,69 +395,114 @@ classDiagram
     ServicoDeLog <|.. JulLogAdapter : Adapter
     JulLogAdapter --> Logger : adapta
 
-   %% ---------------------------------------------------
-    %% CLASSES DO ITEM 4 E TEMPLATE METHOD CORRIGIDO
-    %% ---------------------------------------------------
-    namespace business.entidade {
-        class TipoDeOperacao {
-            <<enumeration>>
+    %% ── Relatório de acessos (RF12, RF13) e Template Method ──
+    namespace business.controle {
+        class GerenciadorDeAcessos {
+            -RegistroDeAcessoRepositorio repositorio
+            -ServicoDeLog log
+            -Clock relogio
+            +registrar(TipoDeOperacao operacao, String login) void
+            +calcularEstatisticas() EstatisticasDeAcesso
+        }
+        class RegistroDeAcessoRepositorio {
+            <<interface · porta da persistência>>
+            +salvar(RegistroDeAcesso registro) void
+            +listarTodos() List~RegistroDeAcesso~
+        }
+        class EstatisticasDeAcesso {
+            <<record>>
+            +LocalDateTime geradoEm
+            +long total
+            +Map porOperacao
+            +SortedMap porDia
+            +List usuariosMaisAtivos
+            +calcular(List registros, LocalDateTime geradoEm)$ EstatisticasDeAcesso
         }
         class FormatoDeRelatorio {
             <<enumeration>>
+            HTML
+            PDF
+            +getNome() String
+            +criarGerador()* GeradorDeRelatorioDeAcessos
         }
-        class RegistroDeAcesso {
-            <<entity>>
-        }
-        class EstatisticasDeAcesso {
-            <<entity>>
-        }
-    }
-
-    namespace business.controle {
-        class GerenciadorDeAcessos
-        class RegistroDeAcessoRepositorio {
-            <<interface>>
-        }
-        
-        note for GeradorDeRelatorioDeAcessos "Padrão: Template Method"
         class GeradorDeRelatorioDeAcessos {
-            <<template>>
-            +gerar(EstatisticasDeAcesso) byte[]
+            <<abstract · Template Method>>
+            +gerar(EstatisticasDeAcesso estatisticas) byte[]
             +extensao()* String
-            #iniciarDocumento(String)*
-            #escreverParagrafo(String)*
-            #escreverTabela(String, List, List)*
+            #iniciarDocumento(String titulo)* void
+            #escreverParagrafo(String texto)* void
+            #escreverTabela(String titulo, List cabecalho, List linhas)* void
             #concluirDocumento()* byte[]
         }
         class RelatorioDeAcessosEmHtml {
             +extensao() String
-            #iniciarDocumento(String)
-            #escreverParagrafo(String)
-            #escreverTabela(String, List, List)
+            #iniciarDocumento(String titulo) void
+            #escreverParagrafo(String texto) void
+            #escreverTabela(String titulo, List cabecalho, List linhas) void
             #concluirDocumento() byte[]
         }
         class RelatorioDeAcessosEmPdf {
             +extensao() String
-            #iniciarDocumento(String)
-            #escreverParagrafo(String)
-            #escreverTabela(String, List, List)
+            #iniciarDocumento(String titulo) void
+            #escreverParagrafo(String texto) void
+            #escreverTabela(String titulo, List cabecalho, List linhas) void
             #concluirDocumento() byte[]
         }
     }
 
-    namespace infra {
-        class RegistroDeAcessoRepositorioEmMemoria {
-            <<repository>>
+    namespace business.entidade {
+        class RegistroDeAcesso {
+            <<record · Serializable>>
+            +LocalDateTime momento
+            +TipoDeOperacao operacao
+            +String login
+            +usuario() Optional~String~
         }
-        class RegistroDeAcessoRepositorioEmArquivo {
-            <<repository>>
+        class TipoDeOperacao {
+            <<enumeration>>
+            CADASTRO_DE_USUARIO
+            LISTAGEM_DE_USUARIOS
+            EDICAO_DE_USUARIO
+            REMOCAO_DE_USUARIO
+            PUBLICACAO
+            CONSULTA_AO_FEED
+            EDICAO_DE_PUBLICACAO
+            REMOCAO_DE_PUBLICACAO
+            +getDescricao() String
         }
     }
 
-    GeradorDeRelatorioDeAcessos <|-- RelatorioDeAcessosEmHtml : especializa
-    GeradorDeRelatorioDeAcessos <|-- RelatorioDeAcessosEmPdf : especializa
-    RegistroDeAcessoRepositorio <|.. RegistroDeAcessoRepositorioEmMemoria : implementa
-    RegistroDeAcessoRepositorio <|.. RegistroDeAcessoRepositorioEmArquivo : implementa
+    namespace infra.persistencia {
+        class RegistroDeAcessoRepositorioEmMemoria {
+            +salvar(RegistroDeAcesso registro) void
+            +listarTodos() List~RegistroDeAcesso~
+        }
+        class RegistroDeAcessoRepositorioEmArquivo {
+            -Path arquivo
+            +salvar(RegistroDeAcesso registro) void
+            +listarTodos() List~RegistroDeAcesso~
+        }
+    }
+
+    note for GeradorDeRelatorioDeAcessos "Template Method: gerar() é final e fixa as seções e a ordem"
+
+    FacadeSingletonController --> GerenciadorDeAcessos : registra cada operação
+    FacadeSingletonController ..> FormatoDeRelatorio : escolhe o gerador
+    TelaPrincipal ..> FormatoDeRelatorio : lê o formato
+    GerenciadorDeAcessos --> RegistroDeAcessoRepositorio : usa
+    GerenciadorDeAcessos --> ServicoDeLog : registra falhas
+    GerenciadorDeAcessos ..> EstatisticasDeAcesso : calcula
+    GerenciadorDeAcessos ..> RegistroDeAcesso : cria
+    RegistroDeAcesso --> TipoDeOperacao
+    RegistroDeAcessoRepositorio ..> RegistroDeAcesso : armazena
+    RegistroDeAcessoRepositorio <|.. RegistroDeAcessoRepositorioEmMemoria
+    RegistroDeAcessoRepositorio <|.. RegistroDeAcessoRepositorioEmArquivo
+    RegistroDeAcessoRepositorioEmArquivo ..> ArquivoBinario
+    RegistroDeAcessoRepositorioEmArquivo ..> PersistenciaException : converte IOException
+    FormatoDeRelatorio ..> GeradorDeRelatorioDeAcessos : cria
+    GeradorDeRelatorioDeAcessos ..> EstatisticasDeAcesso : lê
+    GeradorDeRelatorioDeAcessos <|-- RelatorioDeAcessosEmHtml : Template Method
+    GeradorDeRelatorioDeAcessos <|-- RelatorioDeAcessosEmPdf : Template Method
 ```
 
 > Para não poluir o diagrama, as superclasses das exceções foram omitidas: `NomeInvalidoException`, `EmailInvalidoException`, `LoginInvalidoException`, `SenhaInvalidaException` e `PublicacaoInvalidaException` estendem `IllegalArgumentException`; as demais estendem `RuntimeException`.
@@ -481,10 +531,10 @@ Preencha uma linha por padrão aplicado. Cada padrão relevante também tem um A
 | Singleton | S3 | `FacadeSingletonController` (Singleton: construtor privado, `instancia` estática, `inicializar` e `getInstancia`) | Garante que todas as telas usem os mesmos gerentes e os mesmos dados. Como o armazenamento só é escolhido ao iniciar, a instância é criada por `inicializar` e não de forma preguiçosa | [ADR-0002](07-arquitetura/adr/0002-fachada-unica.md) |
 | Facade | S3 | `FacadeSingletonController` (fachada); `GerenciadorDeUsuarios`, `GerenciadorDePublicacoes` (subsistema); `TelaPrincipal`, `TelaDeUsuarios`, `TelaDePublicacoes` (clientes) | A fronteira depende de uma única classe da camada de negócio, que também combina gerentes quando a operação envolve duas entidades (publicar em nome de um usuário, contar as entidades cadastradas) | [ADR-0002](07-arquitetura/adr/0002-fachada-unica.md) |
 | Repository | S2–S4 | `UsuarioRepositorio`, `PublicacaoRepositorio` (repositório: interface em `business.controle`); `UsuarioRepositorioEmMemoria`, `UsuarioRepositorioEmArquivo`, `PublicacaoRepositorioEmMemoria`, `PublicacaoRepositorioEmArquivo` (implementações em `infra`); `GerenciadorDeUsuarios`, `GerenciadorDePublicacoes` (clientes) | Separa a camada business da infra para as duas entidades: os gerentes salvam, buscam, listam e removem `Usuario` e `Publicacao` como se fosse uma coleção, sem saber se os dados estão em memória ou em arquivo binário | [ADR-0001](07-arquitetura/adr/0001-persistencia-substituivel.md), [ADR-0003](07-arquitetura/adr/0003-repository-e-fabrica-de-repositorios.md) |
-| Abstract Factory | S4 | `FabricaDeRepositorios` (fábrica abstrata, em `business.controle`); `FabricaDeRepositoriosEmMemoria`, `FabricaDeRepositoriosEmArquivo` (fábricas concretas, em `infra`); `UsuarioRepositorio`, `PublicacaoRepositorio` (produtos abstratos); repositórios em memória e em arquivo (produtos concretos); `FacadeSingletonController` (cliente) | Cria juntos os repositórios de todas as entidades com o mesmo tipo de armazenamento, impedindo misturar, por exemplo, usuários em arquivo com publicações em memória. A fachada recebe a fábrica e não conhece nenhum repositório concreto | [ADR-0003](07-arquitetura/adr/0003-repository-e-fabrica-de-repositorios.md) |
+| Abstract Factory | S4 | `FabricaDeRepositorios` (fábrica abstrata, em `business.controle`); `FabricaDeRepositoriosEmMemoria`, `FabricaDeRepositoriosEmArquivo` (fábricas concretas, em `infra`); `UsuarioRepositorio`, `PublicacaoRepositorio`, `RegistroDeAcessoRepositorio` (produtos abstratos); repositórios em memória e em arquivo (produtos concretos); `FacadeSingletonController` (cliente) | Cria juntos os repositórios de todas as entidades com o mesmo tipo de armazenamento, impedindo misturar, por exemplo, usuários em arquivo com publicações em memória. A fachada recebe a fábrica e não conhece nenhum repositório concreto | [ADR-0003](07-arquitetura/adr/0003-repository-e-fabrica-de-repositorios.md) |
 | Factory Method | S4 | `TipoDeArmazenamento` (criador: método abstrato `criarFabrica`); constantes `MEMORIA` e `ARQUIVO` (criadores concretos, cada uma sobrescreve `criarFabrica`); `FabricaDeRepositorios` (produto); `Aplicacao` (cliente) | Seleciona o tipo de repositório a partir da opção escolhida no menu, sem `switch` com `new` concretos em `Aplicacao`. O menu é montado a partir das constantes do enum, então um novo armazenamento só exige uma constante e uma fábrica | [ADR-0003](07-arquitetura/adr/0003-repository-e-fabrica-de-repositorios.md) |
-| Adapter | S4 | `ServicoDeLog` (Target, em `business.controle`); `JulLogAdapter` (Adapter, em `infra.log`); `java.util.logging.Logger` (Adaptee); `GerenciadorDeUsuarios`, `GerenciadorDePublicacoes` (clientes); `NullLog` (implementação nula) | Os gerentes registram eventos de negócio sem conhecer a biblioteca de log: trocar o JUL por outra lib é escrever outro adapter. O log vai para o arquivo `informaci.log`, sem se misturar com os menus do console | [ADR-0004](07-arquitetura/adr/0004-adapter-servico-de-log.md) |
-| Template Method | S4 | `GeradorDeRelatorioDeAcessos` (Template abstrato); `RelatorioDeAcessosEmHtml`, `RelatorioDeAcessosEmPdf` (ConcreteClasses) | Define o esqueleto do algoritmo para a geração de relatórios de estatísticas de acessos. Permite que as subclasses implementem apenas a formatação e a exportação, sem duplicar a lógica principal | [ADR-0005](07-arquitetura/adr/0005-template-method-relatorio-de-acessos.md) |
+| Adapter | S4 | `ServicoDeLog` (Target, em `business.controle`); `JulLogAdapter` (Adapter, em `infra.log`); `java.util.logging.Logger` (Adaptee); `GerenciadorDeUsuarios`, `GerenciadorDePublicacoes`, `GerenciadorDeAcessos` (clientes); `NullLog` (implementação nula) | Os gerentes registram eventos de negócio sem conhecer a biblioteca de log: trocar o JUL por outra lib é escrever outro adapter. O log vai para o arquivo `informaci.log`, sem se misturar com os menus do console | [ADR-0004](07-arquitetura/adr/0004-adapter-servico-de-log.md) |
+| Template Method | S4 | `GeradorDeRelatorioDeAcessos` (classe abstrata, em `business.controle`: método-modelo `final` `gerar` e os passos abstratos `iniciarDocumento`, `escreverParagrafo`, `escreverTabela`, `concluirDocumento`); `RelatorioDeAcessosEmHtml`, `RelatorioDeAcessosEmPdf` (classes concretas); `FormatoDeRelatorio` (escolhe o gerador); `FacadeSingletonController` (cliente) | O método-modelo fixa as seções do relatório de estatísticas de acesso e a ordem delas, e as subclasses só decidem como cada parte é escrita no seu formato. Assim HTML e PDF trazem exatamente as mesmas informações, e um formato novo é só uma subclasse nova. As estatísticas são calculadas antes, em `EstatisticasDeAcesso.calcular` | [ADR-0005](07-arquitetura/adr/0005-template-method-relatorio-de-acessos.md) |
 | Command | S5 | | | |
 | Memento | S5 | | | |
 
