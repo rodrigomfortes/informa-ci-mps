@@ -124,7 +124,7 @@ classDiagram
             -FacadeSingletonController instancia$
             -GerenciadorDeUsuarios usuarios
             -GerenciadorDePublicacoes publicacoes
-            +inicializar(FabricaDeRepositorios fabrica, ServicoDeLog log)$ FacadeSingletonController
+            +inicializar(FabricaDeRepositorios fabrica, ServicoDeLog log, RegistroDeAcessoRepositorio repoAcessos)$ FacadeSingletonController
             +inicializar(FabricaDeRepositorios fabrica)$ FacadeSingletonController
             ~inicializar(UsuarioRepositorio, PublicacaoRepositorio)$ FacadeSingletonController
             +getInstancia()$ FacadeSingletonController
@@ -140,6 +140,7 @@ classDiagram
             +quantidadeDeUsuarios() int
             +quantidadeDePublicacoes() int
             +quantidadeDeEntidadesCadastradas() int
+            +gerarRelatorioDeAcessos()
         }
         class GerenciadorDeUsuarios {
             -UsuarioRepositorio repositorio
@@ -389,28 +390,69 @@ classDiagram
     ServicoDeLog <|.. JulLogAdapter : Adapter
     JulLogAdapter --> Logger : adapta
 
-    %% PADRÃO: TEMPLATE METHOD (Relatórios)
-    note for GeradorDeRelatorioDeAcessos "Padrão: Template Method"
-    class GeradorDeRelatorioDeAcessos {
-        <<template>>
-        +gerarRelatorio()
-        #coletarEstatisticas()*
-        #formatarConteudo()*
-        #exportar()*
+   %% ---------------------------------------------------
+    %% CLASSES DO ITEM 4 E TEMPLATE METHOD CORRIGIDO
+    %% ---------------------------------------------------
+    namespace business.entidade {
+        class TipoDeOperacao {
+            <<enumeration>>
+        }
+        class FormatoDeRelatorio {
+            <<enumeration>>
+        }
+        class RegistroDeAcesso {
+            <<entity>>
+        }
+        class EstatisticasDeAcesso {
+            <<entity>>
+        }
     }
-    class RelatorioDeAcessosEmHtml {
-        <<entity>>
-        #formatarConteudo()
-        #exportar()
+
+    namespace business.controle {
+        class GerenciadorDeAcessos
+        class RegistroDeAcessoRepositorio {
+            <<interface>>
+        }
+        
+        note for GeradorDeRelatorioDeAcessos "Padrão: Template Method"
+        class GeradorDeRelatorioDeAcessos {
+            <<template>>
+            +gerar(EstatisticasDeAcesso) byte[]
+            +extensao()* String
+            #iniciarDocumento(String)*
+            #escreverParagrafo(String)*
+            #escreverTabela(String, List, List)*
+            #concluirDocumento()* byte[]
+        }
+        class RelatorioDeAcessosEmHtml {
+            +extensao() String
+            #iniciarDocumento(String)
+            #escreverParagrafo(String)
+            #escreverTabela(String, List, List)
+            #concluirDocumento() byte[]
+        }
+        class RelatorioDeAcessosEmPdf {
+            +extensao() String
+            #iniciarDocumento(String)
+            #escreverParagrafo(String)
+            #escreverTabela(String, List, List)
+            #concluirDocumento() byte[]
+        }
     }
-    class RelatorioDeAcessosEmPdf {
-        <<entity>>
-        #formatarConteudo()
-        #exportar()
+
+    namespace infra {
+        class RegistroDeAcessoRepositorioEmMemoria {
+            <<repository>>
+        }
+        class RegistroDeAcessoRepositorioEmArquivo {
+            <<repository>>
+        }
     }
-    
+
     GeradorDeRelatorioDeAcessos <|-- RelatorioDeAcessosEmHtml : especializa
     GeradorDeRelatorioDeAcessos <|-- RelatorioDeAcessosEmPdf : especializa
+    RegistroDeAcessoRepositorio <|.. RegistroDeAcessoRepositorioEmMemoria : implementa
+    RegistroDeAcessoRepositorio <|.. RegistroDeAcessoRepositorioEmArquivo : implementa
 ```
 
 > Para não poluir o diagrama, as superclasses das exceções foram omitidas: `NomeInvalidoException`, `EmailInvalidoException`, `LoginInvalidoException`, `SenhaInvalidaException` e `PublicacaoInvalidaException` estendem `IllegalArgumentException`; as demais estendem `RuntimeException`.
@@ -442,7 +484,7 @@ Preencha uma linha por padrão aplicado. Cada padrão relevante também tem um A
 | Abstract Factory | S4 | `FabricaDeRepositorios` (fábrica abstrata, em `business.controle`); `FabricaDeRepositoriosEmMemoria`, `FabricaDeRepositoriosEmArquivo` (fábricas concretas, em `infra`); `UsuarioRepositorio`, `PublicacaoRepositorio` (produtos abstratos); repositórios em memória e em arquivo (produtos concretos); `FacadeSingletonController` (cliente) | Cria juntos os repositórios de todas as entidades com o mesmo tipo de armazenamento, impedindo misturar, por exemplo, usuários em arquivo com publicações em memória. A fachada recebe a fábrica e não conhece nenhum repositório concreto | [ADR-0003](07-arquitetura/adr/0003-repository-e-fabrica-de-repositorios.md) |
 | Factory Method | S4 | `TipoDeArmazenamento` (criador: método abstrato `criarFabrica`); constantes `MEMORIA` e `ARQUIVO` (criadores concretos, cada uma sobrescreve `criarFabrica`); `FabricaDeRepositorios` (produto); `Aplicacao` (cliente) | Seleciona o tipo de repositório a partir da opção escolhida no menu, sem `switch` com `new` concretos em `Aplicacao`. O menu é montado a partir das constantes do enum, então um novo armazenamento só exige uma constante e uma fábrica | [ADR-0003](07-arquitetura/adr/0003-repository-e-fabrica-de-repositorios.md) |
 | Adapter | S4 | `ServicoDeLog` (Target, em `business.controle`); `JulLogAdapter` (Adapter, em `infra.log`); `java.util.logging.Logger` (Adaptee); `GerenciadorDeUsuarios`, `GerenciadorDePublicacoes` (clientes); `NullLog` (implementação nula) | Os gerentes registram eventos de negócio sem conhecer a biblioteca de log: trocar o JUL por outra lib é escrever outro adapter. O log vai para o arquivo `informaci.log`, sem se misturar com os menus do console | [ADR-0004](07-arquitetura/adr/0004-adapter-servico-de-log.md) |
-| Template Method | S4 | `GeradorDeRelatorioDeAcessos` (Template abstrato); `RelatorioDeAcessosEmHtml`, `RelatorioDeAcessosEmPdf` (ConcreteClasses) | Define o esqueleto do algoritmo para a geração de relatórios de estatísticas de acessos. Permite que as subclasses implementem apenas a formatação e a exportação (HTML e PDF), sem duplicar a lógica principal de coleta de dados | [ADR-0005](07-arquitetura/adr/0005-template-method.md) |
+| Template Method | S4 | `GeradorDeRelatorioDeAcessos` (Template abstrato); `RelatorioDeAcessosEmHtml`, `RelatorioDeAcessosEmPdf` (ConcreteClasses) | Define o esqueleto do algoritmo para a geração de relatórios de estatísticas de acessos. Permite que as subclasses implementem apenas a formatação e a exportação, sem duplicar a lógica principal | [ADR-0005](07-arquitetura/adr/0005-template-method-relatorio-de-acessos.md) |
 | Command | S5 | | | |
 | Memento | S5 | | | |
 
