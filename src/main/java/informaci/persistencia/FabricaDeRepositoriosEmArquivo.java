@@ -2,6 +2,7 @@ package informaci.persistencia;
 
 import informaci.controle.FabricaDeRepositorios;
 import informaci.controle.PublicacaoRepositorio;
+import informaci.controle.RegistroDeAcessoRepositorio;
 import informaci.controle.UsuarioRepositorio;
 
 import java.nio.file.Path;
@@ -20,6 +21,9 @@ public class FabricaDeRepositoriosEmArquivo implements FabricaDeRepositorios {
 
     /** Nome do arquivo de publicações dentro da pasta de dados. */
     public static final String ARQUIVO_DE_PUBLICACOES = "publicacoes.bin";
+
+    /** Nome do arquivo dos registros de acesso dentro da pasta de dados. */
+    public static final String ARQUIVO_DE_ACESSOS = "acessos.bin";
 
     private final Path pasta;
 
@@ -44,6 +48,18 @@ public class FabricaDeRepositoriosEmArquivo implements FabricaDeRepositorios {
     @Override
     public PublicacaoRepositorio criarRepositorioDePublicacoes() {
         return new PublicacaoRepositorioEmArquivo(arquivoDePublicacoes());
+    }
+
+    /**
+     * @throws PersistenciaException se o arquivo de acessos existir mas não puder ser lido
+     */
+    @Override
+    public RegistroDeAcessoRepositorio criarRepositorioDeAcessos() {
+        return new RegistroDeAcessoRepositorioEmArquivo(arquivoDeAcessos());
+    }
+
+    public Path arquivoDeAcessos() {
+        return pasta.resolve(ARQUIVO_DE_ACESSOS);
     }
 
     public Path arquivoDeUsuarios() {

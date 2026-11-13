@@ -28,4 +28,7 @@ public interface FabricaDeRepositorios {
 
     /** Cria o repositório de publicações desta família de armazenamento. */
     PublicacaoRepositorio criarRepositorioDePublicacoes();
+
+    /** Cria o repositório dos registros de acesso desta família de armazenamento. */
+    RegistroDeAcessoRepositorio criarRepositorioDeAcessos();
 }
