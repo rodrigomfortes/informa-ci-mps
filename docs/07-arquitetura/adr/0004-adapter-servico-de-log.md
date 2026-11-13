@@ -1,4 +1,4 @@
-# ADR 0003 — Padrão Adapter para isolamento da biblioteca de log
+# ADR-0004: Padrão Adapter para isolamento da biblioteca de log
 
 | Campo    | Valor                                              |
 |----------|----------------------------------------------------|
@@ -33,10 +33,10 @@ própria entre a camada de controle e a biblioteca de log concreta.
 
 | Papel      | Classe                        | Responsabilidade                                           |
 |------------|-------------------------------|------------------------------------------------------------|
-| **Target** | `informaci.log.ServicoDeLog`  | Interface que a camada de controle conhece e usa           |
+| **Target** | `informaci.controle.ServicoDeLog` | Interface que a camada de controle conhece e usa       |
 | **Adapter**| `informaci.log.JulLogAdapter` | Adapta `java.util.logging.Logger` para `ServicoDeLog`      |
 | **Adaptee**| `java.util.logging.Logger`    | Lib preexistente com interface incompatível                 |
-| **Nulo**   | `informaci.log.NullLog`       | Implementação vazia; usada nos testes e como default seguro|
+| **Nulo**   | `informaci.controle.NullLog`  | Implementação vazia; usada nos testes e como default seguro|
 | **Cliente**| `GerenciadorDeUsuarios`,<br>`GerenciadorDePublicacoes` | Dependem apenas de `ServicoDeLog` |
 
 ### Mapeamento de níveis
@@ -46,6 +46,23 @@ própria entre a camada de controle e a biblioteca de log concreta.
 | `info`         | `INFO`                    |
 | `aviso`        | `WARNING`                 |
 | `erro`         | `SEVERE`                  |
+
+### Onde fica cada classe
+
+Como os contratos de repositório (ADR-0001), o **Target** (`ServicoDeLog`) e a
+implementação nula (`NullLog`) ficam no pacote `controle` (camada business):
+os gerentes não importam nada fora de `controle` e `entidade`. O **Adapter**
+(`JulLogAdapter`) fica em `informaci.log`, que faz parte da camada **infra**,
+pois é ele que conhece a biblioteca concreta.
+
+### Saída do log
+
+Por padrão o JUL escreve no console, o que misturaria o log com os menus da
+interface. `JulLogAdapter.gravandoEm(nome, arquivo)` desliga essa saída e grava
+os registros só no arquivo `informaci.log` (ignorado pelo Git). Se o arquivo não
+puder ser aberto, `Aplicacao` avisa e segue com `NullLog`, sem deixar de
+funcionar. As mensagens registram login e identidade, mas não o e-mail, para
+não espalhar dados pessoais (NF-SEG-02).
 
 ### Ponto de composição
 
