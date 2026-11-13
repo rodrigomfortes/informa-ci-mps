@@ -27,7 +27,7 @@ class GerenciadorDeUsuariosTest {
     @BeforeEach
     void criarGerenciadorComRepositorioVazio() {
         repositorio = new UsuarioRepositorioEmMemoria();
-        gerenciador = new GerenciadorDeUsuarios(repositorio);
+        gerenciador = new GerenciadorDeUsuarios(repositorio, new NullLog());
     }
 
     @Test
@@ -132,7 +132,8 @@ class GerenciadorDeUsuariosTest {
 
     @Test
     void deve_rejeitar_quando_repositorio_e_nulo() {
-        assertThrows(NullPointerException.class, () -> new GerenciadorDeUsuarios(null));
+        assertThrows(NullPointerException.class, () -> new GerenciadorDeUsuarios(null, new NullLog()));
+        assertThrows(NullPointerException.class, () -> new GerenciadorDeUsuarios(repositorio, null));
     }
 
     @Test

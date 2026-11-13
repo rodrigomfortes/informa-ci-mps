@@ -15,15 +15,27 @@ import java.util.UUID;
  *
  * <p>Recebe o autor já resolvido: localizar o usuário é responsabilidade de
  * {@link GerenciadorDeUsuarios}, e quem combina os dois é a fachada.
+ *
+ * <p>Recebe também um {@link ServicoDeLog} pelo construtor. Graças ao padrão
+ * Adapter, esta classe desconhece a biblioteca de log concreta.
  */
 public class GerenciadorDePublicacoes {
 
     private final PublicacaoRepositorio repositorio;
+    private final ServicoDeLog log;
 
-    public GerenciadorDePublicacoes(PublicacaoRepositorio repositorio) {
+    /**
+     * Cria o gerenciador com repositório e serviço de log.
+     *
+     * @param repositorio repositório de publicações (obrigatório)
+     * @param log         serviço de log a usar; use {@link NullLog} para silenciar
+     */
+    public GerenciadorDePublicacoes(PublicacaoRepositorio repositorio, ServicoDeLog log) {
         this.repositorio = Objects.requireNonNull(
                 repositorio, "O repositório de publicações é obrigatório.");
+        this.log = Objects.requireNonNull(log, "O serviço de log é obrigatório.");
     }
+
 
     /**
      * @return a publicação criada, já com identidade e data de publicação
@@ -32,6 +44,7 @@ public class GerenciadorDePublicacoes {
     public Publicacao publicar(Usuario autor, DadosDaPublicacao dados) {
         Publicacao publicacao = new Publicacao(autor, dados);
         repositorio.salvar(publicacao);
+        log.info("Publicação criada: " + publicacao.getId() + " por " + autor.getLogin());
         return publicacao;
     }
 
@@ -58,6 +71,7 @@ public class GerenciadorDePublicacoes {
     public Publicacao editar(UUID id, DadosDaPublicacao novosDados) {
         Publicacao editada = buscarPorId(id).comDados(novosDados);
         repositorio.salvar(editada);
+        log.info("Publicação editada: " + editada.getId());
         return editada;
     }
 
@@ -67,6 +81,7 @@ public class GerenciadorDePublicacoes {
     public void remover(UUID id) {
         buscarPorId(id);
         repositorio.remover(id);
+        log.info("Publicação removida: " + id);
     }
 
     /** Quantas publicações têm o usuário informado como autor. */

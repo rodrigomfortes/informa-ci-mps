@@ -15,6 +15,8 @@ src/main/java/informaci/
 │                            exceções de regra de negócio
 ├── entidade/              ← Usuario, Papel, Publicacao, Categoria, DadosDaPublicacao,
 │                            validadores (nome, e-mail, login, senha) e exceções de validação
+├── log/                   ← JulLogAdapter: adapta java.util.logging ao ServicoDeLog do controle
+│                            (infra; padrão Adapter, ADR-0004)
 └── persistencia/          ← implementações dos repositórios (memória e arquivo binário), fábricas
                              concretas (FabricaDeRepositoriosEmMemoria/EmArquivo),
                              TipoDeArmazenamento, ArquivoBinario e PersistenciaException
@@ -122,6 +124,7 @@ classDiagram
             -FacadeSingletonController instancia$
             -GerenciadorDeUsuarios usuarios
             -GerenciadorDePublicacoes publicacoes
+            +inicializar(FabricaDeRepositorios fabrica, ServicoDeLog log)$ FacadeSingletonController
             +inicializar(FabricaDeRepositorios fabrica)$ FacadeSingletonController
             ~inicializar(UsuarioRepositorio, PublicacaoRepositorio)$ FacadeSingletonController
             +getInstancia()$ FacadeSingletonController
@@ -179,6 +182,15 @@ classDiagram
             <<interface · Abstract Factory>>
             +criarRepositorioDeUsuarios() UsuarioRepositorio
             +criarRepositorioDePublicacoes() PublicacaoRepositorio
+        }
+        class ServicoDeLog {
+            <<interface · Adapter: Target>>
+            +info(String mensagem) void
+            +aviso(String mensagem) void
+            +erro(String mensagem, Throwable causa) void
+        }
+        class NullLog {
+            <<Null Object>>
         }
         class EmailJaCadastradoException
         class UsuarioNaoEncontradoException
@@ -260,6 +272,17 @@ classDiagram
         class PublicacaoInvalidaException
     }
 
+    namespace infra.log {
+        class JulLogAdapter {
+            <<Adapter>>
+            -Logger logger
+            +gravandoEm(String nome, Path arquivo)$ JulLogAdapter
+        }
+        class Logger {
+            <<java.util.logging · Adaptee>>
+        }
+    }
+
     namespace infra.persistencia {
         class UsuarioRepositorioEmMemoria
         class UsuarioRepositorioEmArquivo {
@@ -302,6 +325,9 @@ classDiagram
     TelaDePublicacoes --> Console
 
     %% ── dentro de business ──
+    GerenciadorDeUsuarios --> ServicoDeLog : registra eventos
+    GerenciadorDePublicacoes --> ServicoDeLog : registra eventos
+    ServicoDeLog <|.. NullLog
     FacadeSingletonController *-- GerenciadorDeUsuarios
     FacadeSingletonController *-- GerenciadorDePublicacoes
     GerenciadorDeUsuarios ..> Usuario : cria
@@ -356,7 +382,12 @@ classDiagram
     %% ── composition root: único ponto que conhece as três camadas ──
     Aplicacao ..> TelaPrincipal : cria
     Aplicacao ..> TipoDeArmazenamento : escolhe
-    Aplicacao ..> FacadeSingletonController : inicializa com a fábrica
+    Aplicacao ..> FacadeSingletonController : inicializa com a fábrica e o log
+    Aplicacao ..> JulLogAdapter : cria (gravando em informaci.log)
+
+    %% ── Adapter: infra adapta a biblioteca de log ao contrato de business ──
+    ServicoDeLog <|.. JulLogAdapter : Adapter
+    JulLogAdapter --> Logger : adapta
 ```
 
 > Para não poluir o diagrama, as superclasses das exceções foram omitidas: `NomeInvalidoException`, `EmailInvalidoException`, `LoginInvalidoException`, `SenhaInvalidaException` e `PublicacaoInvalidaException` estendem `IllegalArgumentException`; as demais estendem `RuntimeException`.
@@ -387,7 +418,7 @@ Preencha uma linha por padrão aplicado. Cada padrão relevante também tem um A
 | Repository | S2–S4 | `UsuarioRepositorio`, `PublicacaoRepositorio` (repositório: interface em `business.controle`); `UsuarioRepositorioEmMemoria`, `UsuarioRepositorioEmArquivo`, `PublicacaoRepositorioEmMemoria`, `PublicacaoRepositorioEmArquivo` (implementações em `infra`); `GerenciadorDeUsuarios`, `GerenciadorDePublicacoes` (clientes) | Separa a camada business da infra para as duas entidades: os gerentes salvam, buscam, listam e removem `Usuario` e `Publicacao` como se fosse uma coleção, sem saber se os dados estão em memória ou em arquivo binário | [ADR-0001](07-arquitetura/adr/0001-persistencia-substituivel.md), [ADR-0003](07-arquitetura/adr/0003-repository-e-fabrica-de-repositorios.md) |
 | Abstract Factory | S4 | `FabricaDeRepositorios` (fábrica abstrata, em `business.controle`); `FabricaDeRepositoriosEmMemoria`, `FabricaDeRepositoriosEmArquivo` (fábricas concretas, em `infra`); `UsuarioRepositorio`, `PublicacaoRepositorio` (produtos abstratos); repositórios em memória e em arquivo (produtos concretos); `FacadeSingletonController` (cliente) | Cria juntos os repositórios de todas as entidades com o mesmo tipo de armazenamento, impedindo misturar, por exemplo, usuários em arquivo com publicações em memória. A fachada recebe a fábrica e não conhece nenhum repositório concreto | [ADR-0003](07-arquitetura/adr/0003-repository-e-fabrica-de-repositorios.md) |
 | Factory Method | S4 | `TipoDeArmazenamento` (criador: método abstrato `criarFabrica`); constantes `MEMORIA` e `ARQUIVO` (criadores concretos, cada uma sobrescreve `criarFabrica`); `FabricaDeRepositorios` (produto); `Aplicacao` (cliente) | Seleciona o tipo de repositório a partir da opção escolhida no menu, sem `switch` com `new` concretos em `Aplicacao`. O menu é montado a partir das constantes do enum, então um novo armazenamento só exige uma constante e uma fábrica | [ADR-0003](07-arquitetura/adr/0003-repository-e-fabrica-de-repositorios.md) |
-| Adapter | S4 | | | |
+| Adapter | S4 | `ServicoDeLog` (Target, em `business.controle`); `JulLogAdapter` (Adapter, em `infra.log`); `java.util.logging.Logger` (Adaptee); `GerenciadorDeUsuarios`, `GerenciadorDePublicacoes` (clientes); `NullLog` (implementação nula) | Os gerentes registram eventos de negócio sem conhecer a biblioteca de log: trocar o JUL por outra lib é escrever outro adapter. O log vai para o arquivo `informaci.log`, sem se misturar com os menus do console | [ADR-0004](07-arquitetura/adr/0004-adapter-servico-de-log.md) |
 | Template Method | S4 | | | |
 | Command | S5 | | | |
 | Memento | S5 | | | |

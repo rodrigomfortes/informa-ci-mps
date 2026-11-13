@@ -2,10 +2,14 @@ package informaci;
 
 import informaci.controle.FabricaDeRepositorios;
 import informaci.controle.FacadeSingletonController;
+import informaci.controle.NullLog;
+import informaci.controle.ServicoDeLog;
 import informaci.fronteira.TelaPrincipal;
+import informaci.log.JulLogAdapter;
 import informaci.persistencia.PersistenciaException;
 import informaci.persistencia.TipoDeArmazenamento;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Scanner;
 
@@ -16,25 +20,47 @@ import java.util.Scanner;
  * {@link TipoDeArmazenamento} escolhido a fábrica de repositórios
  * correspondente e inicializa com ela a fachada única. Não conhece nenhuma
  * classe concreta de repositório: quem as cria são as fábricas (ADR-0003).
+ *
+ * <p>Também é o único ponto que conhece a biblioteca de log concreta: cria o
+ * {@link JulLogAdapter}, gravando em {@value #NOME_DO_ARQUIVO_DE_LOG}, e o
+ * entrega à fachada como {@link ServicoDeLog} (padrão Adapter, ADR-0004).
  */
 public final class Aplicacao {
 
     /** Pasta onde ficam os arquivos de dados: a pasta de execução. */
     private static final Path PASTA_DE_DADOS = Path.of("");
 
+    private static final String NOME_DO_ARQUIVO_DE_LOG = "informaci.log";
+
     private Aplicacao() {
     }
 
     public static void main(String[] args) {
         Scanner entrada = new Scanner(System.in);
+        ServicoDeLog log = criarLog();
 
-        FacadeSingletonController fachada = inicializarFachada(entrada);
+        FacadeSingletonController fachada = inicializarFachada(entrada, log);
         if (fachada == null) {
             return;
         }
 
         new TelaPrincipal(fachada, entrada, System.out).executar();
         FacadeSingletonController.encerrar();
+    }
+
+    /**
+     * Cria o log em arquivo. Se o arquivo não puder ser aberto, o sistema
+     * avisa e segue sem log, em vez de deixar de funcionar.
+     */
+    private static ServicoDeLog criarLog() {
+        Path arquivo = PASTA_DE_DADOS.resolve(NOME_DO_ARQUIVO_DE_LOG);
+        try {
+            return JulLogAdapter.gravandoEm(Aplicacao.class.getName(), arquivo);
+        } catch (IOException e) {
+            System.out.println("Não foi possível abrir o arquivo de log " + arquivo.toAbsolutePath()
+                    + "; o sistema seguirá sem registro de log.");
+            return new NullLog();
+        }
     }
 
     /**
@@ -45,7 +71,7 @@ public final class Aplicacao {
      *
      * @return a fachada inicializada, ou {@code null} se a entrada terminar
      */
-    private static FacadeSingletonController inicializarFachada(Scanner entrada) {
+    private static FacadeSingletonController inicializarFachada(Scanner entrada, ServicoDeLog log) {
         while (true) {
             TipoDeArmazenamento tipo = escolherArmazenamento(entrada);
             if (tipo == null) {
@@ -54,7 +80,7 @@ public final class Aplicacao {
 
             FabricaDeRepositorios fabrica = tipo.criarFabrica(PASTA_DE_DADOS);
             try {
-                return FacadeSingletonController.inicializar(fabrica);
+                return FacadeSingletonController.inicializar(fabrica, log);
             } catch (PersistenciaException e) {
                 System.out.println(e.getMessage() + " Causa: " + e.getCause());
             }

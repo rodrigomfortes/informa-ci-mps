@@ -10,6 +10,7 @@
 | [ADR-0001](adr/0001-persistencia-substituivel.md) | Tornar o mecanismo de persistência substituível | NF-MAN-01, NF-CON-01, NF-CON-02 |
 | [ADR-0002](adr/0002-fachada-unica.md) | Fachada única (Facade + Singleton) para a camada de negócio | NF-MAN-01 |
 | [ADR-0003](adr/0003-repository-e-fabrica-de-repositorios.md) | Repository para todas as entidades, criado por Abstract Factory escolhida por Factory Method | NF-MAN-01, NF-CON-01 |
+| [ADR-0004](adr/0004-adapter-servico-de-log.md) | Adapter para isolar a biblioteca de log (`java.util.logging`) | NF-MAN-01, NF-SEG-02 |
 
 ## Como cada requisito não funcional é atendido (parcial — Sprints 1 e 2)
 

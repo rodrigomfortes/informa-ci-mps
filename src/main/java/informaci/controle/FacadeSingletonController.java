@@ -22,6 +22,10 @@ import java.util.UUID;
  * telas enxerguem os mesmos gerentes e os mesmos dados. Como o armazenamento
  * só é conhecido depois que o usuário o escolhe, a instância é criada uma vez
  * por {@link #inicializar} e obtida depois por {@link #getInstancia()}.
+ *
+ * <p>Recebe também um {@link ServicoDeLog} e o repassa aos gerentes. A
+ * biblioteca de log concreta fica isolada atrás desse contrato (padrão
+ * Adapter, ADR-0004) e só é conhecida pelo ponto de entrada.
  */
 public final class FacadeSingletonController {
 
@@ -30,9 +34,10 @@ public final class FacadeSingletonController {
     private final GerenciadorDeUsuarios usuarios;
     private final GerenciadorDePublicacoes publicacoes;
 
-    private FacadeSingletonController(UsuarioRepositorio usuarios, PublicacaoRepositorio publicacoes) {
-        this.usuarios = new GerenciadorDeUsuarios(usuarios);
-        this.publicacoes = new GerenciadorDePublicacoes(publicacoes);
+    private FacadeSingletonController(
+            UsuarioRepositorio usuarios, PublicacaoRepositorio publicacoes, ServicoDeLog log) {
+        this.usuarios = new GerenciadorDeUsuarios(usuarios, log);
+        this.publicacoes = new GerenciadorDePublicacoes(publicacoes, log);
     }
 
     /**
@@ -47,12 +52,25 @@ public final class FacadeSingletonController {
      * <p>A verificação de "já inicializada" vem antes de pedir os repositórios,
      * para que uma segunda inicialização não leia arquivos à toa.
      *
+     * @param log serviço de log repassado aos gerentes (padrão Adapter)
+     * @throws IllegalStateException se a fachada já tiver sido inicializada
+     */
+    public static synchronized FacadeSingletonController inicializar(
+            FabricaDeRepositorios fabrica, ServicoDeLog log) {
+        Objects.requireNonNull(fabrica, "A fábrica de repositórios é obrigatória.");
+        Objects.requireNonNull(log, "O serviço de log é obrigatório.");
+        exigirNaoInicializada();
+        return criarInstancia(fabrica.criarRepositorioDeUsuarios(), fabrica.criarRepositorioDePublicacoes(), log);
+    }
+
+    /**
+     * Cria a instância única sem registro de log ({@link NullLog}), por
+     * exemplo nos testes.
+     *
      * @throws IllegalStateException se a fachada já tiver sido inicializada
      */
     public static synchronized FacadeSingletonController inicializar(FabricaDeRepositorios fabrica) {
-        Objects.requireNonNull(fabrica, "A fábrica de repositórios é obrigatória.");
-        exigirNaoInicializada();
-        return criarInstancia(fabrica.criarRepositorioDeUsuarios(), fabrica.criarRepositorioDePublicacoes());
+        return inicializar(fabrica, new NullLog());
     }
 
     /**
@@ -69,7 +87,7 @@ public final class FacadeSingletonController {
     static synchronized FacadeSingletonController inicializar(
             UsuarioRepositorio usuarios, PublicacaoRepositorio publicacoes) {
         exigirNaoInicializada();
-        return criarInstancia(usuarios, publicacoes);
+        return criarInstancia(usuarios, publicacoes, new NullLog());
     }
 
     private static void exigirNaoInicializada() {
@@ -79,10 +97,11 @@ public final class FacadeSingletonController {
     }
 
     private static FacadeSingletonController criarInstancia(
-            UsuarioRepositorio usuarios, PublicacaoRepositorio publicacoes) {
+            UsuarioRepositorio usuarios, PublicacaoRepositorio publicacoes, ServicoDeLog log) {
         instancia = new FacadeSingletonController(
                 Objects.requireNonNull(usuarios, "O repositório de usuários é obrigatório."),
-                Objects.requireNonNull(publicacoes, "O repositório de publicações é obrigatório."));
+                Objects.requireNonNull(publicacoes, "O repositório de publicações é obrigatório."),
+                log);
         return instancia;
     }
 
