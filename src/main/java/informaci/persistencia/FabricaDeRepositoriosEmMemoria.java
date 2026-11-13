@@ -2,6 +2,7 @@ package informaci.persistencia;
 
 import informaci.controle.FabricaDeRepositorios;
 import informaci.controle.PublicacaoRepositorio;
+import informaci.controle.RegistroDeAcessoRepositorio;
 import informaci.controle.UsuarioRepositorio;
 
 /**
@@ -19,5 +20,10 @@ public class FabricaDeRepositoriosEmMemoria implements FabricaDeRepositorios {
     @Override
     public PublicacaoRepositorio criarRepositorioDePublicacoes() {
         return new PublicacaoRepositorioEmMemoria();
+    }
+
+    @Override
+    public RegistroDeAcessoRepositorio criarRepositorioDeAcessos() {
+        return new RegistroDeAcessoRepositorioEmMemoria();
     }
 }

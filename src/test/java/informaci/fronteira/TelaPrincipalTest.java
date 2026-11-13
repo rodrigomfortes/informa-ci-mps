@@ -1,5 +1,8 @@
 package informaci.fronteira;
 
+import org.junit.jupiter.api.io.TempDir;
+import java.nio.file.Path;
+import java.nio.file.Files;
 import informaci.controle.FacadeSingletonController;
 import informaci.entidade.Categoria;
 import informaci.entidade.DadosDaPublicacao;
@@ -64,5 +67,45 @@ class TelaPrincipalTest {
         String saida = executar("2", "2");
 
         assertTrue(saida.contains("Nenhuma publicação cadastrada."));
+    }
+
+    @TempDir
+    Path pasta;
+
+    private String executarGravandoEm(Path pastaDosRelatorios, String... linhas) {
+        Scanner entrada = new Scanner(String.join("\n", linhas) + "\n");
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        PrintStream saida = new PrintStream(bytes, true, StandardCharsets.UTF_8);
+
+        new TelaPrincipal(fachada, entrada, saida, pastaDosRelatorios).executar();
+
+        return bytes.toString(StandardCharsets.UTF_8);
+    }
+
+    @Test
+    void deve_gerar_o_relatorio_de_acessos_em_html() throws Exception {
+        fachada.adicionarUsuario("Ana Souza", "ana@academico.ufpb.br", "anasouza", "Senha@123", Papel.MEMBRO);
+
+        String saida = executarGravandoEm(pasta, "4", "1", "0");
+
+        Path arquivo = pasta.resolve("relatorio-de-acessos.html");
+        assertTrue(saida.contains("Relatório gerado: " + arquivo.toAbsolutePath()));
+        assertTrue(Files.readString(arquivo, StandardCharsets.UTF_8).contains("Total de acessos: 1"));
+    }
+
+    @Test
+    void deve_gerar_o_relatorio_de_acessos_em_pdf_depois_de_formato_invalido() throws Exception {
+        String saida = executarGravandoEm(pasta, "4", "9", "2", "0");
+
+        assertTrue(saida.contains("Formato inválido."));
+        assertTrue(Files.readString(pasta.resolve("relatorio-de-acessos.pdf"), StandardCharsets.ISO_8859_1)
+                .startsWith("%PDF-1.4"));
+    }
+
+    @Test
+    void deve_avisar_quando_nao_consegue_gravar_o_relatorio() {
+        String saida = executarGravandoEm(pasta.resolve("inexistente"), "4", "1", "0");
+
+        assertTrue(saida.contains("Não foi possível gravar o relatório em"));
     }
 }
