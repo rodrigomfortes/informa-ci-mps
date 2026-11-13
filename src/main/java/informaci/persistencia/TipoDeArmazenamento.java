@@ -32,8 +32,9 @@ public enum TipoDeArmazenamento {
         @Override
         public String descricao(Path pasta) {
             return "Arquivo binário ("
-                    + pasta.resolve(FabricaDeRepositoriosEmArquivo.ARQUIVO_DE_USUARIOS).toAbsolutePath() + " e "
-                    + pasta.resolve(FabricaDeRepositoriosEmArquivo.ARQUIVO_DE_PUBLICACOES).toAbsolutePath() + ")";
+                    + pasta.resolve(FabricaDeRepositoriosEmArquivo.ARQUIVO_DE_USUARIOS).toAbsolutePath() + ", "
+                    + pasta.resolve(FabricaDeRepositoriosEmArquivo.ARQUIVO_DE_PUBLICACOES).toAbsolutePath() + " e "
+                    + pasta.resolve(FabricaDeRepositoriosEmArquivo.ARQUIVO_DE_ACESSOS).toAbsolutePath() + ")";
         }
 
         @Override

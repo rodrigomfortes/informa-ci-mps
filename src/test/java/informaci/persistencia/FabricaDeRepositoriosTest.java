@@ -46,6 +46,7 @@ class FabricaDeRepositoriosTest {
 
         assertTrue(descricao.contains(pasta.resolve("usuarios.bin").toAbsolutePath().toString()));
         assertTrue(descricao.contains(pasta.resolve("publicacoes.bin").toAbsolutePath().toString()));
+        assertTrue(descricao.contains(pasta.resolve("acessos.bin").toAbsolutePath().toString()));
     }
 
     // ---- Abstract Factory: família em memória ----

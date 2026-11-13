@@ -5,7 +5,7 @@
 
 ## 6.1 Diagrama de casos de uso
 
-O diagrama cobre todo o sistema: gerenciamento de usuários, Módulo de Notícias e Achados e Perdidos. Todos os requisitos funcionais definidos (RF01 a RF11) estão ligados a um caso de uso; a tabela de rastreabilidade abaixo mostra qual.
+O diagrama cobre todo o sistema: gerenciamento de usuários, Módulo de Notícias e Achados e Perdidos. Todos os requisitos funcionais definidos (RF01 a RF13) estão ligados a um caso de uso; a tabela de rastreabilidade abaixo mostra qual.
 
 O diagrama usa Mermaid, que o GitHub desenha direto na página. A versão em UML formal (PlantUML) está em [`casos-de-uso.puml`](casos-de-uso.puml).
 
@@ -34,6 +34,7 @@ flowchart LR
             UC13(["UC13 Registrar ação na auditoria"])
             UC19(["UC19 Consultar quantidade de entidades"])
             UC23(["UC23 Editar usuário"])
+            UC24(["UC24 Gerar relatório de acessos"])
         end
         subgraph Noticias["Módulo de Notícias"]
             UC14(["UC14 Publicar publicação"])
@@ -71,6 +72,7 @@ flowchart LR
     Administrador --- UC12
     Administrador --- UC19
     Administrador --- UC23
+    Administrador --- UC24
     Publicador -. "especializa" .-> Membro
     Administrador -. "especializa" .-> Membro
 
@@ -124,5 +126,6 @@ Os 3 casos de uso mais relevantes, um do gerenciamento de usuários e dois da en
 | UC21 Consultar mural | Visitante, Membro do CI | — | Visão §2.3; a especificar |
 | UC22 Marcar item como devolvido | Membro do CI | — | Visão §2.3; a especificar |
 | UC23 Editar usuário | Administrador | RF10, NF-CON-01 | Implementado (Entrega 2) |
+| UC24 Gerar relatório de acessos | Administrador | RF12, RF13 | Implementado (Sprint 4) |
 
 **Regra:** IDs de casos de uso **não** são renumerados nem reaproveitados.

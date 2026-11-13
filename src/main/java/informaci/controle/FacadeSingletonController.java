@@ -4,8 +4,10 @@ import informaci.entidade.DadosDaPublicacao;
 import informaci.entidade.DadosDoUsuario;
 import informaci.entidade.Papel;
 import informaci.entidade.Publicacao;
+import informaci.entidade.TipoDeOperacao;
 import informaci.entidade.Usuario;
 
+import java.time.Clock;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -33,11 +35,14 @@ public final class FacadeSingletonController {
 
     private final GerenciadorDeUsuarios usuarios;
     private final GerenciadorDePublicacoes publicacoes;
+    private final GerenciadorDeAcessos acessos;
 
     private FacadeSingletonController(
-            UsuarioRepositorio usuarios, PublicacaoRepositorio publicacoes, ServicoDeLog log) {
+            UsuarioRepositorio usuarios, PublicacaoRepositorio publicacoes,
+            RegistroDeAcessoRepositorio acessos, ServicoDeLog log) {
         this.usuarios = new GerenciadorDeUsuarios(usuarios, log);
         this.publicacoes = new GerenciadorDePublicacoes(publicacoes, log);
+        this.acessos = new GerenciadorDeAcessos(acessos, log, Clock.systemDefaultZone());
     }
 
     /**
@@ -60,7 +65,8 @@ public final class FacadeSingletonController {
         Objects.requireNonNull(fabrica, "A fábrica de repositórios é obrigatória.");
         Objects.requireNonNull(log, "O serviço de log é obrigatório.");
         exigirNaoInicializada();
-        return criarInstancia(fabrica.criarRepositorioDeUsuarios(), fabrica.criarRepositorioDePublicacoes(), log);
+        return criarInstancia(fabrica.criarRepositorioDeUsuarios(), fabrica.criarRepositorioDePublicacoes(),
+                fabrica.criarRepositorioDeAcessos(), log);
     }
 
     /**
@@ -85,9 +91,9 @@ public final class FacadeSingletonController {
      * @throws IllegalStateException se a fachada já tiver sido inicializada
      */
     static synchronized FacadeSingletonController inicializar(
-            UsuarioRepositorio usuarios, PublicacaoRepositorio publicacoes) {
+            UsuarioRepositorio usuarios, PublicacaoRepositorio publicacoes, RegistroDeAcessoRepositorio acessos) {
         exigirNaoInicializada();
-        return criarInstancia(usuarios, publicacoes, new NullLog());
+        return criarInstancia(usuarios, publicacoes, acessos, new NullLog());
     }
 
     private static void exigirNaoInicializada() {
@@ -97,10 +103,12 @@ public final class FacadeSingletonController {
     }
 
     private static FacadeSingletonController criarInstancia(
-            UsuarioRepositorio usuarios, PublicacaoRepositorio publicacoes, ServicoDeLog log) {
+            UsuarioRepositorio usuarios, PublicacaoRepositorio publicacoes,
+            RegistroDeAcessoRepositorio acessos, ServicoDeLog log) {
         instancia = new FacadeSingletonController(
                 Objects.requireNonNull(usuarios, "O repositório de usuários é obrigatório."),
                 Objects.requireNonNull(publicacoes, "O repositório de publicações é obrigatório."),
+                Objects.requireNonNull(acessos, "O repositório de acessos é obrigatório."),
                 log);
         return instancia;
     }
@@ -127,11 +135,15 @@ public final class FacadeSingletonController {
 
     /** @see GerenciadorDeUsuarios#adicionar */
     public Usuario adicionarUsuario(String nome, String email, String login, String senha, Papel papel) {
-        return usuarios.adicionar(nome, email, login, senha, papel);
+        Usuario usuario = usuarios.adicionar(nome, email, login, senha, papel);
+        acessos.registrar(TipoDeOperacao.CADASTRO_DE_USUARIO, usuario.getLogin());
+        return usuario;
     }
 
     public List<Usuario> listarUsuarios() {
-        return usuarios.listarTodos();
+        List<Usuario> lista = usuarios.listarTodos();
+        acessos.registrar(TipoDeOperacao.LISTAGEM_DE_USUARIOS, null);
+        return lista;
     }
 
     /**
@@ -143,6 +155,7 @@ public final class FacadeSingletonController {
     public Usuario editarUsuario(UUID id, DadosDoUsuario novosDados) {
         Usuario editado = usuarios.editar(id, novosDados);
         publicacoes.atualizarAutor(editado);
+        acessos.registrar(TipoDeOperacao.EDICAO_DE_USUARIO, editado.getLogin());
         return editado;
     }
 
@@ -159,6 +172,7 @@ public final class FacadeSingletonController {
             throw new UsuarioComPublicacoesException(usuario.getLogin(), publicacoesDoUsuario);
         }
         usuarios.remover(id);
+        acessos.registrar(TipoDeOperacao.REMOCAO_DE_USUARIO, usuario.getLogin());
     }
 
     // ---- Publicações ----
@@ -171,21 +185,42 @@ public final class FacadeSingletonController {
      */
     public Publicacao publicar(String emailDoAutor, DadosDaPublicacao dados) {
         Usuario autor = usuarios.buscarPorEmail(emailDoAutor);
-        return publicacoes.publicar(autor, dados);
+        Publicacao publicacao = publicacoes.publicar(autor, dados);
+        acessos.registrar(TipoDeOperacao.PUBLICACAO, autor.getLogin());
+        return publicacao;
     }
 
     public List<Publicacao> listarFeed() {
-        return publicacoes.listarFeed();
+        List<Publicacao> feed = publicacoes.listarFeed();
+        acessos.registrar(TipoDeOperacao.CONSULTA_AO_FEED, null);
+        return feed;
     }
 
     /** @see GerenciadorDePublicacoes#editar */
     public Publicacao editarPublicacao(UUID id, DadosDaPublicacao novosDados) {
-        return publicacoes.editar(id, novosDados);
+        Publicacao editada = publicacoes.editar(id, novosDados);
+        acessos.registrar(TipoDeOperacao.EDICAO_DE_PUBLICACAO, editada.getAutor().getLogin());
+        return editada;
     }
 
     /** @see GerenciadorDePublicacoes#remover */
     public void removerPublicacao(UUID id) {
+        Publicacao publicacao = publicacoes.buscarPorId(id);
         publicacoes.remover(id);
+        acessos.registrar(TipoDeOperacao.REMOCAO_DE_PUBLICACAO, publicacao.getAutor().getLogin());
+    }
+
+    // ---- Relatório de acessos ----
+
+    /**
+     * Gera o relatório de estatísticas de acesso no formato escolhido (RF13),
+     * usando a subclasse do Template Method correspondente ao formato.
+     *
+     * @return o conteúdo do arquivo do relatório
+     */
+    public byte[] gerarRelatorioDeAcessos(FormatoDeRelatorio formato) {
+        Objects.requireNonNull(formato, "O formato do relatório é obrigatório.");
+        return formato.criarGerador().gerar(acessos.calcularEstatisticas());
     }
 
     // ---- Estatísticas ----
