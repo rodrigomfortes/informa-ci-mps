@@ -4,8 +4,7 @@ import informaci.controle.FacadeSingletonController;
 import informaci.entidade.Categoria;
 import informaci.entidade.DadosDaPublicacao;
 import informaci.entidade.Papel;
-import informaci.persistencia.PublicacaoRepositorioEmMemoria;
-import informaci.persistencia.UsuarioRepositorioEmMemoria;
+import informaci.persistencia.FabricaDeRepositoriosEmMemoria;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,8 +22,7 @@ class TelaPrincipalTest {
 
     @BeforeEach
     void inicializarFachada() {
-        fachada = FacadeSingletonController.inicializar(
-                new UsuarioRepositorioEmMemoria(), new PublicacaoRepositorioEmMemoria());
+        fachada = FacadeSingletonController.inicializar(new FabricaDeRepositoriosEmMemoria());
     }
 
     @AfterEach

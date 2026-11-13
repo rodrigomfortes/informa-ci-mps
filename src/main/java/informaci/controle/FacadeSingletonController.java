@@ -36,15 +36,50 @@ public final class FacadeSingletonController {
     }
 
     /**
-     * Cria a instância única com os repositórios escolhidos.
+     * Cria a instância única pedindo à fábrica os repositórios de todas as
+     * entidades (Abstract Factory). A fachada não sabe se eles guardam os dados
+     * em memória ou em arquivo, só que vêm da mesma família.
+     *
+     * <p>Se a fábrica falhar ao criar um repositório (por exemplo, um arquivo
+     * ilegível), a exceção é propagada e a fachada continua não inicializada,
+     * podendo ser inicializada de novo com outra fábrica.
+     *
+     * <p>A verificação de "já inicializada" vem antes de pedir os repositórios,
+     * para que uma segunda inicialização não leia arquivos à toa.
      *
      * @throws IllegalStateException se a fachada já tiver sido inicializada
      */
-    public static synchronized FacadeSingletonController inicializar(
+    public static synchronized FacadeSingletonController inicializar(FabricaDeRepositorios fabrica) {
+        Objects.requireNonNull(fabrica, "A fábrica de repositórios é obrigatória.");
+        exigirNaoInicializada();
+        return criarInstancia(fabrica.criarRepositorioDeUsuarios(), fabrica.criarRepositorioDePublicacoes());
+    }
+
+    /**
+     * Cria a instância única com os repositórios informados.
+     *
+     * <p>Visível só no pacote {@code controle}, para os testes da camada de
+     * negócio que precisam montar a fachada com repositórios específicos. Fora
+     * dele, a única entrada é {@link #inicializar(FabricaDeRepositorios)}, o que
+     * garante que todas as entidades usem a mesma família de armazenamento
+     * (ADR-0003).
+     *
+     * @throws IllegalStateException se a fachada já tiver sido inicializada
+     */
+    static synchronized FacadeSingletonController inicializar(
             UsuarioRepositorio usuarios, PublicacaoRepositorio publicacoes) {
+        exigirNaoInicializada();
+        return criarInstancia(usuarios, publicacoes);
+    }
+
+    private static void exigirNaoInicializada() {
         if (instancia != null) {
             throw new IllegalStateException("A fachada já foi inicializada.");
         }
+    }
+
+    private static FacadeSingletonController criarInstancia(
+            UsuarioRepositorio usuarios, PublicacaoRepositorio publicacoes) {
         instancia = new FacadeSingletonController(
                 Objects.requireNonNull(usuarios, "O repositório de usuários é obrigatório."),
                 Objects.requireNonNull(publicacoes, "O repositório de publicações é obrigatório."));

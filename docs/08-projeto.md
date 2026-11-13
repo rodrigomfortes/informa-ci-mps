@@ -6,16 +6,18 @@
 
 ```text
 src/main/java/informaci/
-├── Aplicacao.java         ← ponto de entrada: pergunta o armazenamento, monta os repositórios
-│                            e inicializa a fachada
+├── Aplicacao.java         ← ponto de entrada: pergunta o armazenamento (TipoDeArmazenamento),
+│                            obtém a fábrica de repositórios e inicializa a fachada com ela
 ├── fronteira/             ← telas de console (TelaPrincipal, TelaDeUsuarios, TelaDePublicacoes)
 ├── controle/              ← fachada única (FacadeSingletonController), gerentes dos casos de uso
 │                            (GerenciadorDeUsuarios, GerenciadorDePublicacoes), contratos dos
-│                            repositórios e exceções de regra de negócio
+│                            repositórios e da fábrica abstrata (FabricaDeRepositorios) e
+│                            exceções de regra de negócio
 ├── entidade/              ← Usuario, Papel, Publicacao, Categoria, DadosDaPublicacao,
 │                            validadores (nome, e-mail, login, senha) e exceções de validação
-└── persistencia/          ← implementações dos repositórios (memória e arquivo binário),
-                             ArquivoBinario e PersistenciaException
+└── persistencia/          ← implementações dos repositórios (memória e arquivo binário), fábricas
+                             concretas (FabricaDeRepositoriosEmMemoria/EmArquivo),
+                             TipoDeArmazenamento, ArquivoBinario e PersistenciaException
 src/test/java/informaci/   ← mesma estrutura; testes JUnit por cenário das specs
 ```
 
@@ -25,7 +27,7 @@ src/test/java/informaci/   ← mesma estrutura; testes JUnit por cenário das sp
 | `controle`, `entidade` | `business` (`control`, `model`, `exception`) |
 | `persistencia` | `infra` |
 
-**Regra de dependência:** `fronteira` → `controle` → `entidade` ← `persistencia`. As interfaces `UsuarioRepositorio` e `PublicacaoRepositorio` foram declaradas em `controle`, e não em `persistencia`: assim as regras de negócio não importam nenhuma classe de armazenamento, e é a persistência que depende delas (NF-MAN-01, [ADR-0001](07-arquitetura/adr/0001-persistencia-substituivel.md)). A fronteira conversa apenas com a `FacadeSingletonController` ([ADR-0002](07-arquitetura/adr/0002-fachada-unica.md)). Só `Aplicacao` conhece todas as camadas, porque é ela que escolhe a implementação.
+**Regra de dependência:** `fronteira` → `controle` → `entidade` ← `persistencia`. As interfaces `UsuarioRepositorio` e `PublicacaoRepositorio` foram declaradas em `controle`, e não em `persistencia`: assim as regras de negócio não importam nenhuma classe de armazenamento, e é a persistência que depende delas (NF-MAN-01, [ADR-0001](07-arquitetura/adr/0001-persistencia-substituivel.md)). A fronteira conversa apenas com a `FacadeSingletonController` ([ADR-0002](07-arquitetura/adr/0002-fachada-unica.md)). Só `Aplicacao` conhece todas as camadas, porque é ela que escolhe o tipo de armazenamento; quem cria os repositórios concretos são as fábricas ([ADR-0003](07-arquitetura/adr/0003-repository-e-fabrica-de-repositorios.md)).
 
 ## 2. Diagrama de classes de projeto
 
@@ -44,16 +46,24 @@ flowchart LR
         F["FacadeSingletonController"]
         G["GerenciadorDeUsuarios<br/>GerenciadorDePublicacoes"]
         P["«interface»<br/>UsuarioRepositorio<br/>PublicacaoRepositorio"]
+        AF["«interface»<br/>FabricaDeRepositorios"]
         E["Usuario · Publicacao"]
         F --> G --> P
+        F -->|pede os repositórios| AF
+        AF -.->|cria| P
         G --> E
         P -.->|armazena| E
     end
     subgraph infra["infra · pacote persistencia"]
         R["UsuarioRepositorioEmMemoria / EmArquivo<br/>PublicacaoRepositorioEmMemoria / EmArquivo<br/>ArquivoBinario · PersistenciaException"]
+        FC["FabricaDeRepositoriosEmMemoria<br/>FabricaDeRepositoriosEmArquivo"]
+        TA["«enum» TipoDeArmazenamento"]
+        TA -->|criarFabrica| FC
+        FC -->|cria| R
     end
     T --> F
     R -. "implementa" .-> P
+    FC -. "implementa" .-> AF
     R -.->|usa| E
 ```
 
@@ -67,7 +77,8 @@ flowchart LR
 - **business → infra:** nenhuma classe de `business` referencia uma classe de `infra`. Os gerentes só enxergam a interface do repositório (que pertence a `business.controle`).
 - **infra → business:** `infra` implementa as interfaces e manipula as entidades (`Usuario`, `Publicacao`); é a única direção de dependência entre as camadas (inversão de dependência, [ADR-0001](07-arquitetura/adr/0001-persistencia-substituivel.md)).
 - **Detalhes de armazenamento** (`ArquivoBinario`, `IOException`, `PersistenciaException`) ficam inteiramente em `infra`; `business` não precisa conhecê-los.
-- **`Aplicacao`** é a raiz de composição: o único ponto que conhece as três camadas, pois escolhe a implementação de repositório e a entrega à fachada.
+- **Criação dos repositórios (Abstract Factory + Factory Method):** a fachada recebe uma `FabricaDeRepositorios` (interface de `business.controle`) e pede a ela o repositório de cada entidade. As fábricas concretas ficam em `infra`, uma por família de armazenamento, e são escolhidas pelo Factory Method `TipoDeArmazenamento.criarFabrica`.
+- **`Aplicacao`** é a raiz de composição: o único ponto que conhece as três camadas. Ela só escolhe o `TipoDeArmazenamento` e entrega à fachada a fábrica correspondente, sem instanciar nenhum repositório concreto.
 
 **Diagrama de classes**
 
@@ -78,7 +89,8 @@ classDiagram
     class Aplicacao {
         <<composition root>>
         +main(args)$ void
-        -escolherArmazenamento(Scanner entrada)$ Armazenamento
+        -inicializarFachada(Scanner entrada)$ FacadeSingletonController
+        -escolherArmazenamento(Scanner entrada)$ TipoDeArmazenamento
     }
 
     namespace ui.fronteira {
@@ -110,8 +122,8 @@ classDiagram
             -FacadeSingletonController instancia$
             -GerenciadorDeUsuarios usuarios
             -GerenciadorDePublicacoes publicacoes
-            -FacadeSingletonController(UsuarioRepositorio, PublicacaoRepositorio)
-            +inicializar(UsuarioRepositorio, PublicacaoRepositorio)$ FacadeSingletonController
+            +inicializar(FabricaDeRepositorios fabrica)$ FacadeSingletonController
+            ~inicializar(UsuarioRepositorio, PublicacaoRepositorio)$ FacadeSingletonController
             +getInstancia()$ FacadeSingletonController
             +encerrar()$ void
             +adicionarUsuario(nome, email, login, senha, papel) Usuario
@@ -163,6 +175,11 @@ classDiagram
             +listarTodas() List~Publicacao~
             +remover(UUID id) void
         }
+        class FabricaDeRepositorios {
+            <<interface · Abstract Factory>>
+            +criarRepositorioDeUsuarios() UsuarioRepositorio
+            +criarRepositorioDePublicacoes() PublicacaoRepositorio
+        }
         class EmailJaCadastradoException
         class UsuarioNaoEncontradoException
         class UsuarioComPublicacoesException
@@ -204,7 +221,6 @@ classDiagram
             -Categoria categoria
             -LocalDateTime dataHora
             -String local
-            +Publicacao(Usuario autor, DadosDaPublicacao dados)
             +comDados(DadosDaPublicacao novosDados) Publicacao
             +comAutor(Usuario autor) Publicacao
         }
@@ -258,6 +274,22 @@ classDiagram
             ~gravar(Path arquivo, List objetos)$ void
         }
         class PersistenciaException
+        class FabricaDeRepositoriosEmMemoria {
+            +criarRepositorioDeUsuarios() UsuarioRepositorio
+            +criarRepositorioDePublicacoes() PublicacaoRepositorio
+        }
+        class FabricaDeRepositoriosEmArquivo {
+            -Path pasta
+            +criarRepositorioDeUsuarios() UsuarioRepositorio
+            +criarRepositorioDePublicacoes() PublicacaoRepositorio
+        }
+        class TipoDeArmazenamento {
+            <<enumeration · Factory Method>>
+            MEMORIA
+            ARQUIVO
+            +descricao(Path pasta) String
+            +criarFabrica(Path pasta) FabricaDeRepositorios
+        }
     }
 
     %% ── ui → business (somente pela fachada) ──
@@ -310,13 +342,21 @@ classDiagram
     UsuarioRepositorioEmArquivo ..> PersistenciaException : converte IOException
     PublicacaoRepositorioEmArquivo ..> PersistenciaException : converte IOException
 
+    %% ── criação dos repositórios: Abstract Factory + Factory Method ──
+    FacadeSingletonController ..> FabricaDeRepositorios : pede os repositórios
+    FabricaDeRepositorios <|.. FabricaDeRepositoriosEmMemoria
+    FabricaDeRepositorios <|.. FabricaDeRepositoriosEmArquivo
+    FabricaDeRepositoriosEmMemoria ..> UsuarioRepositorioEmMemoria : cria
+    FabricaDeRepositoriosEmMemoria ..> PublicacaoRepositorioEmMemoria : cria
+    FabricaDeRepositoriosEmArquivo ..> UsuarioRepositorioEmArquivo : cria
+    FabricaDeRepositoriosEmArquivo ..> PublicacaoRepositorioEmArquivo : cria
+    TipoDeArmazenamento ..> FabricaDeRepositoriosEmMemoria : MEMORIA cria
+    TipoDeArmazenamento ..> FabricaDeRepositoriosEmArquivo : ARQUIVO cria
+
     %% ── composition root: único ponto que conhece as três camadas ──
     Aplicacao ..> TelaPrincipal : cria
-    Aplicacao ..> FacadeSingletonController : inicializa com os repositórios
-    Aplicacao ..> UsuarioRepositorioEmMemoria : cria (opção 1)
-    Aplicacao ..> PublicacaoRepositorioEmMemoria : cria (opção 1)
-    Aplicacao ..> UsuarioRepositorioEmArquivo : cria (opção 2)
-    Aplicacao ..> PublicacaoRepositorioEmArquivo : cria (opção 2)
+    Aplicacao ..> TipoDeArmazenamento : escolhe
+    Aplicacao ..> FacadeSingletonController : inicializa com a fábrica
 ```
 
 > Para não poluir o diagrama, as superclasses das exceções foram omitidas: `NomeInvalidoException`, `EmailInvalidoException`, `LoginInvalidoException`, `SenhaInvalidaException` e `PublicacaoInvalidaException` estendem `IllegalArgumentException`; as demais estendem `RuntimeException`.
@@ -344,8 +384,9 @@ Preencha uma linha por padrão aplicado. Cada padrão relevante também tem um A
 |---|---|---|---|---|
 | Singleton | S3 | `FacadeSingletonController` (Singleton: construtor privado, `instancia` estática, `inicializar` e `getInstancia`) | Garante que todas as telas usem os mesmos gerentes e os mesmos dados. Como o armazenamento só é escolhido ao iniciar, a instância é criada por `inicializar` e não de forma preguiçosa | [ADR-0002](07-arquitetura/adr/0002-fachada-unica.md) |
 | Facade | S3 | `FacadeSingletonController` (fachada); `GerenciadorDeUsuarios`, `GerenciadorDePublicacoes` (subsistema); `TelaPrincipal`, `TelaDeUsuarios`, `TelaDePublicacoes` (clientes) | A fronteira depende de uma única classe da camada de negócio, que também combina gerentes quando a operação envolve duas entidades (publicar em nome de um usuário, contar as entidades cadastradas) | [ADR-0002](07-arquitetura/adr/0002-fachada-unica.md) |
-| Repository | S4 | | | |
-| Factory Method / Abstract Factory | S4 | | | |
+| Repository | S2–S4 | `UsuarioRepositorio`, `PublicacaoRepositorio` (repositório: interface em `business.controle`); `UsuarioRepositorioEmMemoria`, `UsuarioRepositorioEmArquivo`, `PublicacaoRepositorioEmMemoria`, `PublicacaoRepositorioEmArquivo` (implementações em `infra`); `GerenciadorDeUsuarios`, `GerenciadorDePublicacoes` (clientes) | Separa a camada business da infra para as duas entidades: os gerentes salvam, buscam, listam e removem `Usuario` e `Publicacao` como se fosse uma coleção, sem saber se os dados estão em memória ou em arquivo binário | [ADR-0001](07-arquitetura/adr/0001-persistencia-substituivel.md), [ADR-0003](07-arquitetura/adr/0003-repository-e-fabrica-de-repositorios.md) |
+| Abstract Factory | S4 | `FabricaDeRepositorios` (fábrica abstrata, em `business.controle`); `FabricaDeRepositoriosEmMemoria`, `FabricaDeRepositoriosEmArquivo` (fábricas concretas, em `infra`); `UsuarioRepositorio`, `PublicacaoRepositorio` (produtos abstratos); repositórios em memória e em arquivo (produtos concretos); `FacadeSingletonController` (cliente) | Cria juntos os repositórios de todas as entidades com o mesmo tipo de armazenamento, impedindo misturar, por exemplo, usuários em arquivo com publicações em memória. A fachada recebe a fábrica e não conhece nenhum repositório concreto | [ADR-0003](07-arquitetura/adr/0003-repository-e-fabrica-de-repositorios.md) |
+| Factory Method | S4 | `TipoDeArmazenamento` (criador: método abstrato `criarFabrica`); constantes `MEMORIA` e `ARQUIVO` (criadores concretos, cada uma sobrescreve `criarFabrica`); `FabricaDeRepositorios` (produto); `Aplicacao` (cliente) | Seleciona o tipo de repositório a partir da opção escolhida no menu, sem `switch` com `new` concretos em `Aplicacao`. O menu é montado a partir das constantes do enum, então um novo armazenamento só exige uma constante e uma fábrica | [ADR-0003](07-arquitetura/adr/0003-repository-e-fabrica-de-repositorios.md) |
 | Adapter | S4 | | | |
 | Template Method | S4 | | | |
 | Command | S5 | | | |
