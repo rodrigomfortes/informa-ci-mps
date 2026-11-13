@@ -4,8 +4,6 @@ import informaci.entidade.DadosDaPublicacao;
 import informaci.entidade.Publicacao;
 import informaci.entidade.PublicacaoInvalidaException;
 import informaci.entidade.Usuario;
-import informaci.log.NullLog;
-import informaci.log.ServicoDeLog;
 
 import java.util.List;
 import java.util.Objects;
@@ -38,16 +36,6 @@ public class GerenciadorDePublicacoes {
         this.log = Objects.requireNonNull(log, "O serviço de log é obrigatório.");
     }
 
-    /**
-     * Cria o gerenciador sem log (compatibilidade com código existente).
-     *
-     * @param repositorio repositório de publicações (obrigatório)
-     * @deprecated prefira o construtor com {@link ServicoDeLog} explícito
-     */
-    @Deprecated
-    public GerenciadorDePublicacoes(PublicacaoRepositorio repositorio) {
-        this(repositorio, new NullLog());
-    }
 
     /**
      * @return a publicação criada, já com identidade e data de publicação

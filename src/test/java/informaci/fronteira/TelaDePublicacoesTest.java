@@ -5,8 +5,7 @@ import informaci.entidade.Categoria;
 import informaci.entidade.DadosDaPublicacao;
 import informaci.entidade.Papel;
 import informaci.entidade.Publicacao;
-import informaci.persistencia.PublicacaoRepositorioEmMemoria;
-import informaci.persistencia.UsuarioRepositorioEmMemoria;
+import informaci.persistencia.FabricaDeRepositoriosEmMemoria;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,8 +27,7 @@ class TelaDePublicacoesTest {
 
     @BeforeEach
     void criarFachadaComUmPublicador() {
-        fachada = FacadeSingletonController.inicializar(
-                new UsuarioRepositorioEmMemoria(), new PublicacaoRepositorioEmMemoria());
+        fachada = FacadeSingletonController.inicializar(new FabricaDeRepositoriosEmMemoria());
         fachada.adicionarUsuario("Coordenação", EMAIL_DO_PUBLICADOR, "coordenacao", "Senha@123", Papel.PUBLICADOR);
     }
 

@@ -7,6 +7,7 @@ import informaci.entidade.DadosDaPublicacao;
 import informaci.entidade.Papel;
 import informaci.entidade.Publicacao;
 import informaci.entidade.PublicacaoInvalidaException;
+import informaci.persistencia.PersistenciaException;
 import informaci.persistencia.PublicacaoRepositorioEmMemoria;
 import informaci.persistencia.UsuarioRepositorioEmMemoria;
 import org.junit.jupiter.api.AfterEach;
@@ -61,6 +62,99 @@ class FacadeSingletonControllerTest {
 
         assertThrows(NullPointerException.class,
                 () -> FacadeSingletonController.inicializar(null, new PublicacaoRepositorioEmMemoria()));
+    }
+
+    @Test
+    void deve_inicializar_com_os_repositorios_criados_pela_fabrica() {
+        FacadeSingletonController.encerrar();
+        FabricaDeRepositorios fabrica = new FabricaDeRepositorios() {
+            @Override
+            public UsuarioRepositorio criarRepositorioDeUsuarios() {
+                return new UsuarioRepositorioEmMemoria();
+            }
+
+            @Override
+            public PublicacaoRepositorio criarRepositorioDePublicacoes() {
+                return new PublicacaoRepositorioEmMemoria();
+            }
+        };
+
+        FacadeSingletonController criada = FacadeSingletonController.inicializar(fabrica);
+        criada.adicionarUsuario("Coordenação", "coordenacao@ci.ufpb.br", "coordenacao", SENHA, Papel.PUBLICADOR);
+        criada.publicar("coordenacao@ci.ufpb.br", COMUNICADO);
+
+        assertSame(criada, FacadeSingletonController.getInstancia());
+        assertEquals(2, criada.quantidadeDeEntidadesCadastradas());
+    }
+
+    @Test
+    void deve_recusar_fabrica_nula() {
+        FacadeSingletonController.encerrar();
+
+        assertThrows(NullPointerException.class,
+                () -> FacadeSingletonController.inicializar((FabricaDeRepositorios) null));
+    }
+
+    @Test
+    void deve_continuar_nao_inicializada_quando_a_fabrica_falha_ao_criar_os_usuarios() {
+        FacadeSingletonController.encerrar();
+        PersistenciaException falha = new PersistenciaException("usuários ilegíveis", null);
+
+        assertSame(falha, assertThrows(PersistenciaException.class,
+                () -> FacadeSingletonController.inicializar(fabricaQueFalha(falha, null))));
+        assertThrows(IllegalStateException.class, FacadeSingletonController::getInstancia);
+    }
+
+    @Test
+    void deve_continuar_nao_inicializada_quando_a_fabrica_falha_ao_criar_as_publicacoes() {
+        FacadeSingletonController.encerrar();
+        PersistenciaException falha = new PersistenciaException("publicações ilegíveis", null);
+
+        assertSame(falha, assertThrows(PersistenciaException.class,
+                () -> FacadeSingletonController.inicializar(fabricaQueFalha(null, falha))));
+        assertThrows(IllegalStateException.class, FacadeSingletonController::getInstancia);
+    }
+
+    @Test
+    void deve_aceitar_outra_fabrica_depois_de_uma_falha() {
+        FacadeSingletonController.encerrar();
+        PersistenciaException falha = new PersistenciaException("usuários ilegíveis", null);
+        assertThrows(PersistenciaException.class,
+                () -> FacadeSingletonController.inicializar(fabricaQueFalha(falha, null)));
+
+        FacadeSingletonController criada = FacadeSingletonController.inicializar(fabricaQueFalha(null, null));
+
+        assertSame(criada, FacadeSingletonController.getInstancia());
+    }
+
+    @Test
+    void nao_deve_pedir_repositorios_a_fabrica_quando_ja_inicializada() {
+        PersistenciaException naoDeveriaSerLancada = new PersistenciaException("não deveria ler", null);
+
+        assertThrows(IllegalStateException.class, () -> FacadeSingletonController.inicializar(
+                fabricaQueFalha(naoDeveriaSerLancada, naoDeveriaSerLancada)));
+    }
+
+    /** Fábrica em memória que lança a falha indicada (se não for nula) ao criar cada repositório. */
+    private static FabricaDeRepositorios fabricaQueFalha(
+            PersistenciaException falhaDeUsuarios, PersistenciaException falhaDePublicacoes) {
+        return new FabricaDeRepositorios() {
+            @Override
+            public UsuarioRepositorio criarRepositorioDeUsuarios() {
+                if (falhaDeUsuarios != null) {
+                    throw falhaDeUsuarios;
+                }
+                return new UsuarioRepositorioEmMemoria();
+            }
+
+            @Override
+            public PublicacaoRepositorio criarRepositorioDePublicacoes() {
+                if (falhaDePublicacoes != null) {
+                    throw falhaDePublicacoes;
+                }
+                return new PublicacaoRepositorioEmMemoria();
+            }
+        };
     }
 
     @Test

@@ -1,4 +1,4 @@
-package informaci.log;
+package informaci.controle;
 
 /**
  * Implementação de {@link ServicoDeLog} que descarta todos os registros.

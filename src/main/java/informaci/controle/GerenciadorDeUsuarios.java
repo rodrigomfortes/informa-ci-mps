@@ -8,8 +8,6 @@ import informaci.entidade.Papel;
 import informaci.entidade.SenhaInvalidaException;
 import informaci.entidade.Usuario;
 import informaci.entidade.ValidadorDeEmail;
-import informaci.log.NullLog;
-import informaci.log.ServicoDeLog;
 
 import java.util.List;
 import java.util.Objects;
@@ -44,16 +42,6 @@ public class GerenciadorDeUsuarios {
         this.log = Objects.requireNonNull(log, "O serviço de log é obrigatório.");
     }
 
-    /**
-     * Cria o gerenciador sem log (compatibilidade com código existente).
-     *
-     * @param repositorio repositório de usuários (obrigatório)
-     * @deprecated prefira o construtor com {@link ServicoDeLog} explícito
-     */
-    @Deprecated
-    public GerenciadorDeUsuarios(UsuarioRepositorio repositorio) {
-        this(repositorio, new NullLog());
-    }
 
     /**
      * Adiciona um novo usuário ao sistema.
@@ -74,7 +62,7 @@ public class GerenciadorDeUsuarios {
         Usuario usuario = new Usuario(nome, email, login, senha, papel);
 
         if (repositorio.existeComEmail(usuario.getEmail())) {
-            log.aviso("Tentativa de cadastro com e-mail já existente: " + usuario.getEmail());
+            log.aviso("Cadastro recusado: e-mail já pertence a outro usuário.");
             throw new EmailJaCadastradoException(usuario.getEmail());
         }
 
@@ -121,7 +109,7 @@ public class GerenciadorDeUsuarios {
         repositorio.buscarPorEmail(editado.getEmail())
                 .filter(outro -> !outro.equals(editado))
                 .ifPresent(outro -> {
-                    log.aviso("Tentativa de edição com e-mail já existente: " + editado.getEmail());
+                    log.aviso("Edição recusada: o novo e-mail do usuário " + editado.getId() + " já pertence a outro usuário.");
                     throw new EmailJaCadastradoException(editado.getEmail());
                 });
         repositorio.salvar(editado);

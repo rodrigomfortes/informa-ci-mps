@@ -5,8 +5,6 @@ import informaci.entidade.DadosDoUsuario;
 import informaci.entidade.Papel;
 import informaci.entidade.Publicacao;
 import informaci.entidade.Usuario;
-import informaci.log.NullLog;
-import informaci.log.ServicoDeLog;
 
 import java.util.List;
 import java.util.Objects;
@@ -25,9 +23,9 @@ import java.util.UUID;
  * só é conhecido depois que o usuário o escolhe, a instância é criada uma vez
  * por {@link #inicializar} e obtida depois por {@link #getInstancia()}.
  *
- * <p>Recebe um {@link ServicoDeLog} e o repassa aos gerenciadores, mantendo
- * a dependência da lib concreta isolada no ponto de composição (a
- * {@link informaci.Aplicacao}).
+ * <p>Recebe também um {@link ServicoDeLog} e o repassa aos gerentes. A
+ * biblioteca de log concreta fica isolada atrás desse contrato (padrão
+ * Adapter, ADR-0004) e só é conhecida pelo ponto de entrada.
  */
 public final class FacadeSingletonController {
 
@@ -37,42 +35,74 @@ public final class FacadeSingletonController {
     private final GerenciadorDePublicacoes publicacoes;
 
     private FacadeSingletonController(
-            UsuarioRepositorio usuarios,
-            PublicacaoRepositorio publicacoes,
-            ServicoDeLog log) {
+            UsuarioRepositorio usuarios, PublicacaoRepositorio publicacoes, ServicoDeLog log) {
         this.usuarios = new GerenciadorDeUsuarios(usuarios, log);
         this.publicacoes = new GerenciadorDePublicacoes(publicacoes, log);
     }
 
     /**
-     * Cria a instância única com os repositórios e o serviço de log escolhidos.
+     * Cria a instância única pedindo à fábrica os repositórios de todas as
+     * entidades (Abstract Factory). A fachada não sabe se eles guardam os dados
+     * em memória ou em arquivo, só que vêm da mesma família.
      *
+     * <p>Se a fábrica falhar ao criar um repositório (por exemplo, um arquivo
+     * ilegível), a exceção é propagada e a fachada continua não inicializada,
+     * podendo ser inicializada de novo com outra fábrica.
+     *
+     * <p>A verificação de "já inicializada" vem antes de pedir os repositórios,
+     * para que uma segunda inicialização não leia arquivos à toa.
+     *
+     * @param log serviço de log repassado aos gerentes (padrão Adapter)
      * @throws IllegalStateException se a fachada já tiver sido inicializada
      */
     public static synchronized FacadeSingletonController inicializar(
-            UsuarioRepositorio usuarios,
-            PublicacaoRepositorio publicacoes,
-            ServicoDeLog log) {
-        if (instancia != null) {
-            throw new IllegalStateException("A fachada já foi inicializada.");
-        }
-        instancia = new FacadeSingletonController(
-                Objects.requireNonNull(usuarios, "O repositório de usuários é obrigatório."),
-                Objects.requireNonNull(publicacoes, "O repositório de publicações é obrigatório."),
-                Objects.requireNonNull(log, "O serviço de log é obrigatório."));
-        return instancia;
+            FabricaDeRepositorios fabrica, ServicoDeLog log) {
+        Objects.requireNonNull(fabrica, "A fábrica de repositórios é obrigatória.");
+        Objects.requireNonNull(log, "O serviço de log é obrigatório.");
+        exigirNaoInicializada();
+        return criarInstancia(fabrica.criarRepositorioDeUsuarios(), fabrica.criarRepositorioDePublicacoes(), log);
     }
 
     /**
-     * Cria a instância única sem log (compatibilidade com código existente).
+     * Cria a instância única sem registro de log ({@link NullLog}), por
+     * exemplo nos testes.
      *
      * @throws IllegalStateException se a fachada já tiver sido inicializada
-     * @deprecated prefira {@link #inicializar(UsuarioRepositorio, PublicacaoRepositorio, ServicoDeLog)}
      */
-    @Deprecated
-    public static synchronized FacadeSingletonController inicializar(
+    public static synchronized FacadeSingletonController inicializar(FabricaDeRepositorios fabrica) {
+        return inicializar(fabrica, new NullLog());
+    }
+
+    /**
+     * Cria a instância única com os repositórios informados.
+     *
+     * <p>Visível só no pacote {@code controle}, para os testes da camada de
+     * negócio que precisam montar a fachada com repositórios específicos. Fora
+     * dele, a única entrada é {@link #inicializar(FabricaDeRepositorios)}, o que
+     * garante que todas as entidades usem a mesma família de armazenamento
+     * (ADR-0003).
+     *
+     * @throws IllegalStateException se a fachada já tiver sido inicializada
+     */
+    static synchronized FacadeSingletonController inicializar(
             UsuarioRepositorio usuarios, PublicacaoRepositorio publicacoes) {
-        return inicializar(usuarios, publicacoes, new NullLog());
+        exigirNaoInicializada();
+        return criarInstancia(usuarios, publicacoes, new NullLog());
+    }
+
+    private static void exigirNaoInicializada() {
+        if (instancia != null) {
+            throw new IllegalStateException("A fachada já foi inicializada.");
+        }
+    }
+
+    private static FacadeSingletonController criarInstancia(
+            UsuarioRepositorio usuarios, PublicacaoRepositorio publicacoes, ServicoDeLog log) {
+        instancia = new FacadeSingletonController(
+                Objects.requireNonNull(usuarios, "O repositório de usuários é obrigatório."),
+                Objects.requireNonNull(publicacoes, "O repositório de publicações é obrigatório."),
+                log);
+        return instancia;
     }
 
     /**

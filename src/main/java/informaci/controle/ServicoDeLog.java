@@ -1,4 +1,4 @@
-package informaci.log;
+package informaci.controle;
 
 /**
  * Contrato de registro de eventos do sistema.

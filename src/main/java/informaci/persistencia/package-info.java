@@ -11,6 +11,13 @@
  *       sobrevivem entre execuções.</li>
  * </ul>
  *
+ * <p>Os repositórios não são instanciados diretamente por quem os usa: cada
+ * família de armazenamento tem uma fábrica concreta
+ * ({@code FabricaDeRepositoriosEmMemoria}, {@code FabricaDeRepositoriosEmArquivo})
+ * que implementa a fábrica abstrata {@code FabricaDeRepositorios} do controle
+ * (Abstract Factory), e {@code TipoDeArmazenamento} escolhe qual fábrica criar
+ * (Factory Method). Ver ADR-0003.
+ *
  * <p>Falhas de leitura ou gravação são convertidas em
  * {@code PersistenciaException}, para que as demais camadas não precisem
  * lidar com exceções verificadas de E/S.
@@ -21,7 +28,7 @@
  *
  * <p><strong>Regra de dependência:</strong> é a única camada que conhece
  * detalhes de armazenamento. Nenhuma outra camada deve importar classes daqui
- * — a exceção é {@code informaci.Aplicacao}, ponto de entrada que monta o
- * repositório escolhido e o entrega ao controle.
+ * — a exceção é {@code informaci.Aplicacao}, ponto de entrada que escolhe o
+ * {@code TipoDeArmazenamento} e entrega a fábrica correspondente ao controle.
  */
 package informaci.persistencia;

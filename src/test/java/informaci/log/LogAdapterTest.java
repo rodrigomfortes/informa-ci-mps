@@ -1,7 +1,14 @@
 package informaci.log;
 
+import informaci.controle.NullLog;
+import informaci.controle.ServicoDeLog;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Handler;
@@ -87,6 +94,27 @@ class LogAdapterTest {
     @Test
     void julLogAdapter_nomeNuloLancaExcecao() {
         assertThrows(NullPointerException.class, () -> new JulLogAdapter(null));
+    }
+
+    @Test
+    void julLogAdapter_gravandoEmArquivoEscreveSoNoArquivo(@TempDir Path pasta) throws IOException {
+        Path arquivo = pasta.resolve("informaci.log");
+
+        ServicoDeLog log = JulLogAdapter.gravandoEm("informaci.log.teste.arquivo", arquivo);
+        log.info("registro no arquivo");
+
+        assertTrue(Files.readString(arquivo, StandardCharsets.UTF_8).contains("registro no arquivo"));
+        assertFalse(Logger.getLogger("informaci.log.teste.arquivo").getUseParentHandlers(),
+                "o log não deve ir para o console, onde se misturaria com os menus");
+        for (Handler handler : Logger.getLogger("informaci.log.teste.arquivo").getHandlers()) {
+            handler.close();
+        }
+    }
+
+    @Test
+    void julLogAdapter_gravandoEmArquivoFalhaQuandoPastaNaoExiste(@TempDir Path pasta) {
+        assertThrows(IOException.class,
+                () -> JulLogAdapter.gravandoEm("informaci.log.teste.falha", pasta.resolve("inexistente/x.log")));
     }
 
     // ---- auxiliar ----

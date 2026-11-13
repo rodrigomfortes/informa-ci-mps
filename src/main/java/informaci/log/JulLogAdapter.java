@@ -1,8 +1,15 @@
 package informaci.log;
 
+import informaci.controle.ServicoDeLog;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.Objects;
+import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 /**
  * Adapta {@link java.util.logging.Logger} (JUL — Java Util Logging) para a
@@ -42,6 +49,29 @@ public final class JulLogAdapter implements ServicoDeLog {
      */
     public JulLogAdapter(String nome) {
         this.logger = Logger.getLogger(Objects.requireNonNull(nome, "O nome do logger é obrigatório."));
+    }
+
+    /**
+     * Cria o adapter gravando os registros no arquivo informado, e só nele.
+     *
+     * <p>Por padrão o JUL escreve no console, o que misturaria o log com os
+     * menus da interface de console. Aqui a saída padrão é desligada
+     * ({@code setUseParentHandlers(false)}) e os registros vão, acrescentados,
+     * para o arquivo.
+     *
+     * @param nome    nome do logger
+     * @param arquivo arquivo de log, criado se não existir
+     * @throws IOException se o arquivo não puder ser aberto para escrita
+     */
+    public static JulLogAdapter gravandoEm(String nome, Path arquivo) throws IOException {
+        Objects.requireNonNull(arquivo, "O arquivo de log é obrigatório.");
+        JulLogAdapter adapter = new JulLogAdapter(nome);
+        FileHandler arquivoDeLog = new FileHandler(arquivo.toString(), true);
+        arquivoDeLog.setFormatter(new SimpleFormatter());
+        arquivoDeLog.setEncoding(StandardCharsets.UTF_8.name());
+        adapter.logger.setUseParentHandlers(false);
+        adapter.logger.addHandler(arquivoDeLog);
+        return adapter;
     }
 
     /**
