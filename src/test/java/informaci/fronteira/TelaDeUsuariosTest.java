@@ -4,7 +4,8 @@ import informaci.entidade.DadosDaPublicacao;
 import informaci.entidade.Categoria;
 import informaci.controle.FacadeSingletonController;
 import informaci.entidade.Papel;
-import informaci.persistencia.PublicacaoRepositorioEmMemoria;
+import informaci.controle.UsuarioRepositorio;
+import informaci.persistencia.FabricaDeRepositoriosEmMemoria;
 import informaci.persistencia.UsuarioRepositorioEmMemoria;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,7 +27,14 @@ class TelaDeUsuariosTest {
     @BeforeEach
     void criarFachadaComRepositorioVazio() {
         repositorio = new UsuarioRepositorioEmMemoria();
-        fachada = FacadeSingletonController.inicializar(repositorio, new PublicacaoRepositorioEmMemoria());
+        // Fábrica em memória que devolve o repositório acima, para que os
+        // testes possam inspecionar o que a tela gravou.
+        fachada = FacadeSingletonController.inicializar(new FabricaDeRepositoriosEmMemoria() {
+            @Override
+            public UsuarioRepositorio criarRepositorioDeUsuarios() {
+                return repositorio;
+            }
+        });
     }
 
     @AfterEach

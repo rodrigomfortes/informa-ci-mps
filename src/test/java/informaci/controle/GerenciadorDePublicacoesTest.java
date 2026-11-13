@@ -28,7 +28,7 @@ class GerenciadorDePublicacoesTest {
     @BeforeEach
     void criarGerenciadorComRepositorioVazio() {
         repositorio = new PublicacaoRepositorioEmMemoria();
-        gerenciador = new GerenciadorDePublicacoes(repositorio);
+        gerenciador = new GerenciadorDePublicacoes(repositorio, new NullLog());
     }
 
     private static DadosDaPublicacao comunicado(String titulo) {
@@ -108,6 +108,7 @@ class GerenciadorDePublicacoesTest {
 
     @Test
     void deve_rejeitar_quando_repositorio_e_nulo() {
-        assertThrows(NullPointerException.class, () -> new GerenciadorDePublicacoes(null));
+        assertThrows(NullPointerException.class, () -> new GerenciadorDePublicacoes(null, new NullLog()));
+        assertThrows(NullPointerException.class, () -> new GerenciadorDePublicacoes(repositorio, null));
     }
 }

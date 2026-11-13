@@ -1,5 +1,7 @@
 package informaci.controle;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.nio.charset.StandardCharsets;
 import informaci.entidade.Usuario;
 import informaci.entidade.DadosDoUsuario;
 import informaci.entidade.Categoria;
@@ -7,7 +9,9 @@ import informaci.entidade.DadosDaPublicacao;
 import informaci.entidade.Papel;
 import informaci.entidade.Publicacao;
 import informaci.entidade.PublicacaoInvalidaException;
+import informaci.persistencia.PersistenciaException;
 import informaci.persistencia.PublicacaoRepositorioEmMemoria;
+import informaci.persistencia.RegistroDeAcessoRepositorioEmMemoria;
 import informaci.persistencia.UsuarioRepositorioEmMemoria;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,8 +31,8 @@ class FacadeSingletonControllerTest {
 
     @BeforeEach
     void inicializarFachada() {
-        fachada = FacadeSingletonController.inicializar(
-                new UsuarioRepositorioEmMemoria(), new PublicacaoRepositorioEmMemoria());
+        fachada = FacadeSingletonController.inicializar(new UsuarioRepositorioEmMemoria(),
+                new PublicacaoRepositorioEmMemoria(), new RegistroDeAcessoRepositorioEmMemoria());
     }
 
     @AfterEach
@@ -45,7 +49,8 @@ class FacadeSingletonControllerTest {
     @Test
     void deve_recusar_uma_segunda_inicializacao() {
         assertThrows(IllegalStateException.class, () -> FacadeSingletonController.inicializar(
-                new UsuarioRepositorioEmMemoria(), new PublicacaoRepositorioEmMemoria()));
+                new UsuarioRepositorioEmMemoria(), new PublicacaoRepositorioEmMemoria(),
+                new RegistroDeAcessoRepositorioEmMemoria()));
     }
 
     @Test
@@ -60,7 +65,111 @@ class FacadeSingletonControllerTest {
         FacadeSingletonController.encerrar();
 
         assertThrows(NullPointerException.class,
-                () -> FacadeSingletonController.inicializar(null, new PublicacaoRepositorioEmMemoria()));
+                () -> FacadeSingletonController.inicializar(null, new PublicacaoRepositorioEmMemoria(),
+                        new RegistroDeAcessoRepositorioEmMemoria()));
+    }
+
+    @Test
+    void deve_inicializar_com_os_repositorios_criados_pela_fabrica() {
+        FacadeSingletonController.encerrar();
+        FabricaDeRepositorios fabrica = new FabricaDeRepositorios() {
+            @Override
+            public UsuarioRepositorio criarRepositorioDeUsuarios() {
+                return new UsuarioRepositorioEmMemoria();
+            }
+
+            @Override
+            public PublicacaoRepositorio criarRepositorioDePublicacoes() {
+                return new PublicacaoRepositorioEmMemoria();
+            }
+
+            @Override
+            public RegistroDeAcessoRepositorio criarRepositorioDeAcessos() {
+                return new RegistroDeAcessoRepositorioEmMemoria();
+            }
+        };
+
+        FacadeSingletonController criada = FacadeSingletonController.inicializar(fabrica);
+        criada.adicionarUsuario("Coordenação", "coordenacao@ci.ufpb.br", "coordenacao", SENHA, Papel.PUBLICADOR);
+        criada.publicar("coordenacao@ci.ufpb.br", COMUNICADO);
+
+        assertSame(criada, FacadeSingletonController.getInstancia());
+        assertEquals(2, criada.quantidadeDeEntidadesCadastradas());
+    }
+
+    @Test
+    void deve_recusar_fabrica_nula() {
+        FacadeSingletonController.encerrar();
+
+        assertThrows(NullPointerException.class,
+                () -> FacadeSingletonController.inicializar((FabricaDeRepositorios) null));
+    }
+
+    @Test
+    void deve_continuar_nao_inicializada_quando_a_fabrica_falha_ao_criar_os_usuarios() {
+        FacadeSingletonController.encerrar();
+        PersistenciaException falha = new PersistenciaException("usuários ilegíveis", null);
+
+        assertSame(falha, assertThrows(PersistenciaException.class,
+                () -> FacadeSingletonController.inicializar(fabricaQueFalha(falha, null))));
+        assertThrows(IllegalStateException.class, FacadeSingletonController::getInstancia);
+    }
+
+    @Test
+    void deve_continuar_nao_inicializada_quando_a_fabrica_falha_ao_criar_as_publicacoes() {
+        FacadeSingletonController.encerrar();
+        PersistenciaException falha = new PersistenciaException("publicações ilegíveis", null);
+
+        assertSame(falha, assertThrows(PersistenciaException.class,
+                () -> FacadeSingletonController.inicializar(fabricaQueFalha(null, falha))));
+        assertThrows(IllegalStateException.class, FacadeSingletonController::getInstancia);
+    }
+
+    @Test
+    void deve_aceitar_outra_fabrica_depois_de_uma_falha() {
+        FacadeSingletonController.encerrar();
+        PersistenciaException falha = new PersistenciaException("usuários ilegíveis", null);
+        assertThrows(PersistenciaException.class,
+                () -> FacadeSingletonController.inicializar(fabricaQueFalha(falha, null)));
+
+        FacadeSingletonController criada = FacadeSingletonController.inicializar(fabricaQueFalha(null, null));
+
+        assertSame(criada, FacadeSingletonController.getInstancia());
+    }
+
+    @Test
+    void nao_deve_pedir_repositorios_a_fabrica_quando_ja_inicializada() {
+        PersistenciaException naoDeveriaSerLancada = new PersistenciaException("não deveria ler", null);
+
+        assertThrows(IllegalStateException.class, () -> FacadeSingletonController.inicializar(
+                fabricaQueFalha(naoDeveriaSerLancada, naoDeveriaSerLancada)));
+    }
+
+    /** Fábrica em memória que lança a falha indicada (se não for nula) ao criar cada repositório. */
+    private static FabricaDeRepositorios fabricaQueFalha(
+            PersistenciaException falhaDeUsuarios, PersistenciaException falhaDePublicacoes) {
+        return new FabricaDeRepositorios() {
+            @Override
+            public UsuarioRepositorio criarRepositorioDeUsuarios() {
+                if (falhaDeUsuarios != null) {
+                    throw falhaDeUsuarios;
+                }
+                return new UsuarioRepositorioEmMemoria();
+            }
+
+            @Override
+            public PublicacaoRepositorio criarRepositorioDePublicacoes() {
+                if (falhaDePublicacoes != null) {
+                    throw falhaDePublicacoes;
+                }
+                return new PublicacaoRepositorioEmMemoria();
+            }
+
+            @Override
+            public RegistroDeAcessoRepositorio criarRepositorioDeAcessos() {
+                return new RegistroDeAcessoRepositorioEmMemoria();
+            }
+        };
     }
 
     @Test
@@ -145,5 +254,56 @@ class FacadeSingletonControllerTest {
                 "Coordenação de Computação", "coordenacao@ci.ufpb.br", "coordcc", SENHA, Papel.PUBLICADOR));
 
         assertEquals("coordcc", fachada.listarFeed().get(0).getAutor().getLogin());
+    }
+
+    private String relatorioHtml() {
+        return new String(fachada.gerarRelatorioDeAcessos(FormatoDeRelatorio.HTML), StandardCharsets.UTF_8);
+    }
+
+    @Test
+    void deve_registrar_um_acesso_por_operacao_concluida() {
+        fachada.adicionarUsuario("Coordenação", "coordenacao@ci.ufpb.br", "coordenacao", SENHA, Papel.PUBLICADOR);
+        fachada.publicar("coordenacao@ci.ufpb.br", COMUNICADO);
+        fachada.listarFeed();
+
+        String relatorio = relatorioHtml();
+
+        assertTrue(relatorio.contains("<p>Total de acessos: 3</p>"));
+        assertTrue(relatorio.contains("<tr><td>Cadastro de usuário</td><td>1</td></tr>"));
+        assertTrue(relatorio.contains("<tr><td>Publicação</td><td>1</td></tr>"));
+        assertTrue(relatorio.contains("<tr><td>Consulta ao feed</td><td>1</td></tr>"));
+        assertTrue(relatorio.contains("<tr><td>coordenacao</td><td>2</td></tr>"));
+    }
+
+    @Test
+    void nao_deve_registrar_acesso_de_operacao_que_falhou() {
+        assertThrows(UsuarioNaoEncontradoException.class,
+                () -> fachada.publicar("ninguem@ci.ufpb.br", COMUNICADO));
+
+        assertTrue(relatorioHtml().contains("<p>Total de acessos: 0</p>"));
+    }
+
+    @Test
+    void deve_registrar_edicao_e_remocao_com_o_usuario_envolvido() {
+        Usuario autor = fachada.adicionarUsuario(
+                "Coordenação", "coordenacao@ci.ufpb.br", "coordenacao", SENHA, Papel.PUBLICADOR);
+        Publicacao publicacao = fachada.publicar("coordenacao@ci.ufpb.br", COMUNICADO);
+        fachada.editarPublicacao(publicacao.getId(), COMUNICADO);
+        fachada.removerPublicacao(publicacao.getId());
+        fachada.removerUsuario(autor.getId());
+
+        String relatorio = relatorioHtml();
+
+        assertTrue(relatorio.contains("<tr><td>Edição de publicação</td><td>1</td></tr>"));
+        assertTrue(relatorio.contains("<tr><td>Remoção de publicação</td><td>1</td></tr>"));
+        assertTrue(relatorio.contains("<tr><td>Remoção de usuário</td><td>1</td></tr>"));
+        assertTrue(relatorio.contains("<tr><td>coordenacao</td><td>5</td></tr>"));
+    }
+
+    @Test
+    void deve_gerar_o_relatorio_em_pdf() {
+        byte[] pdf = fachada.gerarRelatorioDeAcessos(FormatoDeRelatorio.PDF);
+
+        assertTrue(new String(pdf, StandardCharsets.ISO_8859_1).startsWith("%PDF-1.4"));
     }
 }

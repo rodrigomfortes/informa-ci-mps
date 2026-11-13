@@ -1,86 +1,117 @@
 package informaci;
 
+import informaci.controle.FabricaDeRepositorios;
 import informaci.controle.FacadeSingletonController;
-import informaci.controle.PublicacaoRepositorio;
-import informaci.controle.UsuarioRepositorio;
+import informaci.controle.NullLog;
+import informaci.controle.ServicoDeLog;
 import informaci.fronteira.TelaPrincipal;
+import informaci.log.JulLogAdapter;
 import informaci.persistencia.PersistenciaException;
-import informaci.persistencia.PublicacaoRepositorioEmArquivo;
-import informaci.persistencia.PublicacaoRepositorioEmMemoria;
-import informaci.persistencia.UsuarioRepositorioEmArquivo;
-import informaci.persistencia.UsuarioRepositorioEmMemoria;
+import informaci.persistencia.TipoDeArmazenamento;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Scanner;
 
 /**
  * Ponto de entrada da aplicação.
  *
- * <p>Pergunta onde os dados devem ser armazenados, monta os repositórios
- * escolhidos e inicializa com eles a fachada única. É a única classe que
- * conhece todas as camadas ao mesmo tempo, justamente para que nenhuma delas
- * precise conhecer a implementação concreta de armazenamento.
+ * <p>Pergunta onde os dados devem ser armazenados, obtém do
+ * {@link TipoDeArmazenamento} escolhido a fábrica de repositórios
+ * correspondente e inicializa com ela a fachada única. Não conhece nenhuma
+ * classe concreta de repositório: quem as cria são as fábricas (ADR-0003).
+ *
+ * <p>Também é o único ponto que conhece a biblioteca de log concreta: cria o
+ * {@link JulLogAdapter}, gravando em {@value #NOME_DO_ARQUIVO_DE_LOG}, e o
+ * entrega à fachada como {@link ServicoDeLog} (padrão Adapter, ADR-0004).
  */
 public final class Aplicacao {
 
-    private static final Path ARQUIVO_DE_USUARIOS = Path.of("usuarios.bin");
-    private static final Path ARQUIVO_DE_PUBLICACOES = Path.of("publicacoes.bin");
+    /** Pasta onde ficam os arquivos de dados: a pasta de execução. */
+    private static final Path PASTA_DE_DADOS = Path.of("");
+
+    private static final String NOME_DO_ARQUIVO_DE_LOG = "informaci.log";
 
     private Aplicacao() {
     }
 
     public static void main(String[] args) {
         Scanner entrada = new Scanner(System.in);
+        ServicoDeLog log = criarLog();
 
-        Armazenamento armazenamento = escolherArmazenamento(entrada);
-        if (armazenamento == null) {
+        FacadeSingletonController fachada = inicializarFachada(entrada, log);
+        if (fachada == null) {
             return;
         }
 
-        FacadeSingletonController fachada =
-                FacadeSingletonController.inicializar(armazenamento.usuarios(), armazenamento.publicacoes());
         new TelaPrincipal(fachada, entrada, System.out).executar();
         FacadeSingletonController.encerrar();
     }
 
-    /** Os repositórios escolhidos para cada entidade. */
-    private record Armazenamento(UsuarioRepositorio usuarios, PublicacaoRepositorio publicacoes) {
+    /**
+     * Cria o log em arquivo. Se o arquivo não puder ser aberto, o sistema
+     * avisa e segue sem log, em vez de deixar de funcionar.
+     */
+    private static ServicoDeLog criarLog() {
+        Path arquivo = PASTA_DE_DADOS.resolve(NOME_DO_ARQUIVO_DE_LOG);
+        try {
+            return JulLogAdapter.gravandoEm(Aplicacao.class.getName(), arquivo);
+        } catch (IOException e) {
+            System.out.println("Não foi possível abrir o arquivo de log " + arquivo.toAbsolutePath()
+                    + "; o sistema seguirá sem registro de log.");
+            return new NullLog();
+        }
     }
 
     /**
-     * Repete a pergunta até obter um armazenamento utilizável.
+     * Repete a escolha do armazenamento até conseguir inicializar a fachada.
      *
      * <p>Se um arquivo existir mas não puder ser lido, a falha é informada e a
      * escolha é oferecida de novo, em vez de encerrar a aplicação.
      *
-     * @return o armazenamento escolhido, ou {@code null} se a entrada terminar
+     * @return a fachada inicializada, ou {@code null} se a entrada terminar
      */
-    private static Armazenamento escolherArmazenamento(Scanner entrada) {
+    private static FacadeSingletonController inicializarFachada(Scanner entrada, ServicoDeLog log) {
+        while (true) {
+            TipoDeArmazenamento tipo = escolherArmazenamento(entrada);
+            if (tipo == null) {
+                return null;
+            }
+
+            FabricaDeRepositorios fabrica = tipo.criarFabrica(PASTA_DE_DADOS);
+            try {
+                return FacadeSingletonController.inicializar(fabrica, log);
+            } catch (PersistenciaException e) {
+                System.out.println(e.getMessage() + " Causa: " + e.getCause());
+            }
+        }
+    }
+
+    /**
+     * Exibe um item de menu por {@link TipoDeArmazenamento} e repete a
+     * pergunta até receber uma opção válida.
+     *
+     * @return o tipo escolhido, ou {@code null} se a entrada terminar
+     */
+    private static TipoDeArmazenamento escolherArmazenamento(Scanner entrada) {
+        TipoDeArmazenamento[] tipos = TipoDeArmazenamento.values();
         while (true) {
             System.out.println("Onde os dados devem ser armazenados?");
-            System.out.println("1 - Memória RAM (os dados se perdem ao encerrar)");
-            System.out.println("2 - Arquivo binário (" + ARQUIVO_DE_USUARIOS.toAbsolutePath()
-                    + " e " + ARQUIVO_DE_PUBLICACOES.getFileName() + ")");
+            for (int i = 0; i < tipos.length; i++) {
+                System.out.println((i + 1) + " - " + tipos[i].descricao(PASTA_DE_DADOS));
+            }
             System.out.print("Opção: ");
             if (!entrada.hasNextLine()) {
                 return null;
             }
 
-            switch (entrada.nextLine().trim()) {
-                case "1" -> {
-                    return new Armazenamento(new UsuarioRepositorioEmMemoria(), new PublicacaoRepositorioEmMemoria());
+            String opcao = entrada.nextLine().trim();
+            for (int i = 0; i < tipos.length; i++) {
+                if (opcao.equals(String.valueOf(i + 1))) {
+                    return tipos[i];
                 }
-                case "2" -> {
-                    try {
-                        return new Armazenamento(
-                                new UsuarioRepositorioEmArquivo(ARQUIVO_DE_USUARIOS),
-                                new PublicacaoRepositorioEmArquivo(ARQUIVO_DE_PUBLICACOES));
-                    } catch (PersistenciaException e) {
-                        System.out.println(e.getMessage() + " Causa: " + e.getCause());
-                    }
-                }
-                default -> System.out.println("Opção inválida.");
             }
+            System.out.println("Opção inválida.");
         }
     }
 }
