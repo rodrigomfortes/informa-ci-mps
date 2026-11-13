@@ -33,3 +33,6 @@ usuarios.bin
 # OpenSpec (Node.js)
 node_modules/
 publicacoes.bin
+
+# Log da aplicação
+informaci.log*
