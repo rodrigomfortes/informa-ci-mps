@@ -5,7 +5,7 @@
 
 ## 6.1 Diagrama de casos de uso
 
-O diagrama cobre todo o sistema: gerenciamento de usuários, Módulo de Notícias e Achados e Perdidos. Todos os requisitos funcionais definidos (RF01 a RF13) estão ligados a um caso de uso; a tabela de rastreabilidade abaixo mostra qual.
+O diagrama cobre todo o sistema: gerenciamento de usuários, Módulo de Notícias e Achados e Perdidos. Todos os requisitos funcionais definidos (RF01 a RF14) estão ligados a um caso de uso; a tabela de rastreabilidade abaixo mostra qual.
 
 O diagrama usa Mermaid, que o GitHub desenha direto na página. A versão em UML formal (PlantUML) está em [`casos-de-uso.puml`](casos-de-uso.puml).
 
@@ -41,6 +41,7 @@ flowchart LR
             UC15(["UC15 Consultar feed"])
             UC16(["UC16 Editar publicação"])
             UC17(["UC17 Remover publicação"])
+            UC25(["UC25 Desfazer última edição de publicação"])
             UC18(["UC18 Buscar publicações"])
         end
         subgraph Achados["Achados e Perdidos"]
@@ -65,6 +66,7 @@ flowchart LR
     Publicador --- UC14
     Publicador --- UC16
     Publicador --- UC17
+    Publicador --- UC25
     Administrador --- UC01
     Administrador --- UC02
     Administrador --- UC10
@@ -83,6 +85,7 @@ flowchart LR
     UC12 -. "«include»" .-> UC13
     UC16 -. "«include»" .-> UC15
     UC17 -. "«include»" .-> UC15
+    UC25 -. "«extend»" .-> UC16
     UC05 --- Email
     UC06 --- Email
 ```
@@ -127,5 +130,6 @@ Os 3 casos de uso mais relevantes, um do gerenciamento de usuários e dois da en
 | UC22 Marcar item como devolvido | Membro do CI | — | Visão §2.3; a especificar |
 | UC23 Editar usuário | Administrador | RF10, NF-CON-01 | Implementado (Entrega 2) |
 | UC24 Gerar relatório de acessos | Administrador | RF12, RF13 | Implementado (Sprint 4) |
+| UC25 Desfazer última edição de publicação | Publicador | RF14 | Implementado (Sprint 5) |
 
 **Regra:** IDs de casos de uso **não** são renumerados nem reaproveitados.

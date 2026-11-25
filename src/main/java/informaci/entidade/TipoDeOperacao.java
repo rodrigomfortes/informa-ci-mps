@@ -12,7 +12,8 @@ public enum TipoDeOperacao {
     PUBLICACAO("Publicação"),
     CONSULTA_AO_FEED("Consulta ao feed"),
     EDICAO_DE_PUBLICACAO("Edição de publicação"),
-    REMOCAO_DE_PUBLICACAO("Remoção de publicação");
+    REMOCAO_DE_PUBLICACAO("Remoção de publicação"),
+    DESFAZER_EDICAO_DE_PUBLICACAO("Desfazer edição de publicação");
 
     private final String descricao;
 

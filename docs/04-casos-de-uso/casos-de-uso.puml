@@ -35,6 +35,7 @@ rectangle "Informa CI" {
     usecase "UC15 Consultar feed" as UC15
     usecase "UC16 Editar publicação" as UC16
     usecase "UC17 Remover publicação" as UC17
+    usecase "UC25 Desfazer última edição de publicação" as UC25
     usecase "UC18 Buscar publicações" as UC18
   }
   package "Achados e Perdidos" {
@@ -59,6 +60,7 @@ Membro --> UC22
 Publicador --> UC14
 Publicador --> UC16
 Publicador --> UC17
+Publicador --> UC25
 Administrador --> UC01
 Administrador --> UC02
 Administrador --> UC10
@@ -75,6 +77,7 @@ UC11 ..> UC13 : <<include>>
 UC12 ..> UC13 : <<include>>
 UC16 ..> UC15 : <<include>>
 UC17 ..> UC15 : <<include>>
+UC25 ..> UC16 : <<extend>>
 UC05 --> Email
 UC06 --> Email
 @enduml

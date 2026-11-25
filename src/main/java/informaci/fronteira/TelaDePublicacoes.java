@@ -1,6 +1,7 @@
 package informaci.fronteira;
 
 import informaci.controle.FacadeSingletonController;
+import informaci.controle.NadaParaDesfazerException;
 import informaci.controle.PublicacaoNaoEncontradaException;
 import informaci.controle.UsuarioNaoEncontradoException;
 import informaci.entidade.Categoria;
@@ -19,7 +20,7 @@ import java.util.Scanner;
 
 /**
  * Interface de console do Módulo de Notícias: publicar, ver o feed, editar e
- * remover publicações (CRUD de {@link Publicacao}).
+ * remover publicações (CRUD de {@link Publicacao}) e desfazer a última edição.
  *
  * <p>Como as demais telas, não contém regra de negócio: coleta os dados,
  * repassa à {@link FacadeSingletonController} e traduz as exceções em
@@ -59,12 +60,14 @@ public class TelaDePublicacoes {
             console.escrever("2 - Ver feed");
             console.escrever("3 - Editar publicação");
             console.escrever("4 - Remover publicação");
+            console.escrever("5 - Desfazer última edição");
             console.escrever("0 - Voltar");
             switch (console.ler("Opção: ").trim()) {
                 case "1" -> publicar();
                 case "2" -> exibirFeed();
                 case "3" -> editar();
                 case "4" -> remover();
+                case "5" -> desfazerUltimaEdicao();
                 case "0" -> {
                     return;
                 }
@@ -177,6 +180,22 @@ public class TelaDePublicacoes {
             console.escrever("Não foi possível remover: " + e.getMessage());
         } catch (RuntimeException e) {
             console.escrever("Falha ao armazenar a remoção: " + e.getMessage());
+        }
+    }
+
+    // ---- Desfazer ----
+
+    /** Volta a publicação editada por último ao estado de antes da edição. */
+    private void desfazerUltimaEdicao() {
+        try {
+            Publicacao restaurada = fachada.desfazerUltimaEdicaoDePublicacao();
+            console.escrever("Edição desfeita: " + restaurada.getTitulo());
+        } catch (NadaParaDesfazerException e) {
+            console.escrever(e.getMessage());
+        } catch (PublicacaoNaoEncontradaException e) {
+            console.escrever("Não foi possível desfazer: " + e.getMessage());
+        } catch (RuntimeException e) {
+            console.escrever("Falha ao armazenar a publicação: " + e.getMessage());
         }
     }
 

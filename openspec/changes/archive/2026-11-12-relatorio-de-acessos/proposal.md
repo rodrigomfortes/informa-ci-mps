@@ -18,4 +18,4 @@ A Sprint 4 pede, na camada business e com o padrão Template Method, a geração
 ## Impacto
 
 - Código: `entidade` (`RegistroDeAcesso`, `TipoDeOperacao`), `controle` (`GerenciadorDeAcessos`, `EstatisticasDeAcesso`, Template Method `GeradorDeRelatorioDeAcessos` com `RelatorioDeAcessosEmHtml` e `RelatorioDeAcessosEmPdf`, `FormatoDeRelatorio`, `RegistroDeAcessoRepositorio`), `persistencia` (repositórios de acesso e fábricas), `fronteira` (opção 4 do menu principal).
-- Arquitetura: [ADR-0005](../../../docs/07-arquitetura/adr/0005-template-method-relatorio-de-acessos.md).
+- Arquitetura: [ADR-0005](../../../../docs/07-arquitetura/adr/0005-template-method-relatorio-de-acessos.md).

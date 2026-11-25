@@ -36,6 +36,7 @@ public final class FacadeSingletonController {
     private final GerenciadorDePublicacoes publicacoes;
     private final GerenciadorDeAcessos acessos;
     private final InvocadorDeComandos invocador = new InvocadorDeComandos();
+    private final HistoricoDeEdicaoDePublicacao historicoDeEdicao = new HistoricoDeEdicaoDePublicacao();
 
     private FacadeSingletonController(
             UsuarioRepositorio usuarios, PublicacaoRepositorio publicacoes,
@@ -179,14 +180,33 @@ public final class FacadeSingletonController {
         return invocador.executar(new ListarFeedComando(publicacoes, acessos));
     }
 
-    /** @see GerenciadorDePublicacoes#editar */
+    /**
+     * Edita a publicação e guarda o estado anterior, para que esta edição
+     * possa ser desfeita (padrão Memento).
+     *
+     * @see GerenciadorDePublicacoes#editar
+     */
     public Publicacao editarPublicacao(UUID id, DadosDaPublicacao novosDados) {
-        return invocador.executar(new EditarPublicacaoComando(publicacoes, acessos, id, novosDados));
+        return invocador.executar(
+                new EditarPublicacaoComando(publicacoes, acessos, historicoDeEdicao, id, novosDados));
+    }
+
+    /**
+     * Desfaz a última edição de publicação, devolvendo a publicação ao estado
+     * de antes dela (padrão Memento). Só a última edição pode ser desfeita, e
+     * uma única vez.
+     *
+     * @return a publicação como estava antes da última edição
+     * @throws NadaParaDesfazerException       se não houver edição para desfazer
+     * @throws PublicacaoNaoEncontradaException se a publicação não existir mais
+     */
+    public Publicacao desfazerUltimaEdicaoDePublicacao() {
+        return invocador.executar(new DesfazerEdicaoDePublicacaoComando(publicacoes, acessos, historicoDeEdicao));
     }
 
     /** @see GerenciadorDePublicacoes#remover */
     public void removerPublicacao(UUID id) {
-        invocador.executar(new RemoverPublicacaoComando(publicacoes, acessos, id));
+        invocador.executar(new RemoverPublicacaoComando(publicacoes, acessos, historicoDeEdicao, id));
     }
 
     // ---- Relatório de acessos ----

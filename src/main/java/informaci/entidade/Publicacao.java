@@ -78,6 +78,30 @@ public class Publicacao implements Serializable {
         return new Publicacao(id, autorAtualizado, dataDePublicacao, dados());
     }
 
+    /**
+     * Guarda o estado atual (título, texto, categoria, data e local) num
+     * memento, para que uma edição possa ser desfeita depois (padrão Memento,
+     * com esta classe como originador).
+     */
+    public MementoDePublicacao salvarEstado() {
+        return new MementoDePublicacao(id, dados());
+    }
+
+    /**
+     * Devolve esta publicação com o estado guardado no memento. Como a
+     * publicação é imutável, o resultado é uma nova instância com a mesma
+     * identidade, o mesmo autor e a mesma data de publicação.
+     *
+     * @throws IllegalArgumentException se o memento for de outra publicação
+     */
+    public Publicacao restaurar(MementoDePublicacao memento) {
+        Objects.requireNonNull(memento, "O memento é obrigatório.");
+        if (!memento.getIdDaPublicacao().equals(id)) {
+            throw new IllegalArgumentException("O memento pertence a outra publicação.");
+        }
+        return comDados(memento.getDados());
+    }
+
     private DadosDaPublicacao dados() {
         return new DadosDaPublicacao(titulo, texto, categoria, dataHora, local);
     }
