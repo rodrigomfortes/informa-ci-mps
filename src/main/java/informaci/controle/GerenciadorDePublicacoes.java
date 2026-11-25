@@ -1,6 +1,7 @@
 package informaci.controle;
 
 import informaci.entidade.DadosDaPublicacao;
+import informaci.entidade.MementoDePublicacao;
 import informaci.entidade.Publicacao;
 import informaci.entidade.PublicacaoInvalidaException;
 import informaci.entidade.Usuario;
@@ -78,6 +79,20 @@ public class GerenciadorDePublicacoes {
     /**
      * @throws PublicacaoNaoEncontradaException se não houver publicação com essa identidade
      */
+    /**
+     * Devolve a publicação ao estado guardado no memento e a grava (desfazer
+     * de uma edição, padrão Memento).
+     *
+     * @throws PublicacaoNaoEncontradaException se a publicação não existir mais
+     */
+    public Publicacao restaurar(MementoDePublicacao memento) {
+        Objects.requireNonNull(memento, "O memento é obrigatório.");
+        Publicacao restaurada = buscarPorId(memento.getIdDaPublicacao()).restaurar(memento);
+        repositorio.salvar(restaurada);
+        log.info("Edição de publicação desfeita: " + restaurada.getId());
+        return restaurada;
+    }
+
     public void remover(UUID id) {
         buscarPorId(id);
         repositorio.remover(id);
