@@ -6,7 +6,7 @@ Registro dos acessos ao Informa CI (operações concluídas) e geração do rela
 ## Requirements
 
 ### Requirement: RF12 — Registrar acessos
-O sistema DEVE registrar como acesso cada operação concluída com sucesso: cadastro, listagem, edição e remoção de usuário; publicação, consulta ao feed, edição e remoção de publicação. Cada registro DEVE guardar a data e a hora, a operação e o login do usuário envolvido (o usuário cadastrado, editado ou removido, ou o autor da publicação), ou nenhum usuário nas consultas gerais. Uma operação recusada NÃO DEVE ser registrada, e uma falha ao guardar o registro NÃO DEVE impedir a operação.
+O sistema DEVE registrar como acesso cada operação concluída com sucesso: cadastro, listagem, edição e remoção de usuário; publicação, consulta ao feed, edição, remoção de publicação e desfazer edição de publicação. Cada registro DEVE guardar a data e a hora, a operação e o login do usuário envolvido (o usuário cadastrado, editado ou removido, ou o autor da publicação), ou nenhum usuário nas consultas gerais. Uma operação recusada NÃO DEVE ser registrada, e uma falha ao guardar o registro NÃO DEVE impedir a operação.
 
 **Prioridade:** Importante
 **Casos de uso:** UC24
