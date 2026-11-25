@@ -147,4 +147,38 @@ class PublicacaoTest {
 
         assertThrows(PublicacaoInvalidaException.class, () -> original.comDados(comunicado("", "Texto")));
     }
+
+    // ---- Memento ----
+
+    @Test
+    void deve_restaurar_o_estado_guardado_antes_da_edicao() {
+        Publicacao original = new Publicacao(PUBLICADOR, palestra(DATA_DO_EVENTO, "Auditório do CI"));
+        MementoDePublicacao memento = original.salvarEstado();
+        Publicacao editada = original.comDados(comunicado("Palestra cancelada", "Sem nova data."));
+
+        Publicacao restaurada = editada.restaurar(memento);
+
+        assertEquals(original.getId(), restaurada.getId());
+        assertEquals(original.getDataDePublicacao(), restaurada.getDataDePublicacao());
+        assertEquals("Introdução a Rust", restaurada.getTitulo());
+        assertEquals("Palestra aberta.", restaurada.getTexto());
+        assertEquals(Categoria.PALESTRA, restaurada.getCategoria());
+        assertEquals(DATA_DO_EVENTO, restaurada.getDataHora().orElseThrow());
+        assertEquals("Auditório do CI", restaurada.getLocal().orElseThrow());
+    }
+
+    @Test
+    void memento_deve_identificar_a_publicacao_de_origem() {
+        Publicacao publicacao = new Publicacao(PUBLICADOR, comunicado("Aviso", "Texto"));
+
+        assertEquals(publicacao.getId(), publicacao.salvarEstado().getIdDaPublicacao());
+    }
+
+    @Test
+    void nao_deve_restaurar_memento_de_outra_publicacao() {
+        Publicacao uma = new Publicacao(PUBLICADOR, comunicado("Aviso", "Texto"));
+        Publicacao outra = new Publicacao(PUBLICADOR, comunicado("Outro aviso", "Texto"));
+
+        assertThrows(IllegalArgumentException.class, () -> outra.restaurar(uma.salvarEstado()));
+    }
 }
