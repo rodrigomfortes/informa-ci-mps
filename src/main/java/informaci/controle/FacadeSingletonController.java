@@ -4,7 +4,6 @@ import informaci.entidade.DadosDaPublicacao;
 import informaci.entidade.DadosDoUsuario;
 import informaci.entidade.Papel;
 import informaci.entidade.Publicacao;
-import informaci.entidade.TipoDeOperacao;
 import informaci.entidade.Usuario;
 
 import java.time.Clock;
@@ -173,30 +172,21 @@ public final class FacadeSingletonController {
      * @see GerenciadorDePublicacoes#publicar
      */
     public Publicacao publicar(String emailDoAutor, DadosDaPublicacao dados) {
-        Usuario autor = usuarios.buscarPorEmail(emailDoAutor);
-        Publicacao publicacao = publicacoes.publicar(autor, dados);
-        acessos.registrar(TipoDeOperacao.PUBLICACAO, autor.getLogin());
-        return publicacao;
+        return invocador.executar(new PublicarComando(usuarios, publicacoes, acessos, emailDoAutor, dados));
     }
 
     public List<Publicacao> listarFeed() {
-        List<Publicacao> feed = publicacoes.listarFeed();
-        acessos.registrar(TipoDeOperacao.CONSULTA_AO_FEED, null);
-        return feed;
+        return invocador.executar(new ListarFeedComando(publicacoes, acessos));
     }
 
     /** @see GerenciadorDePublicacoes#editar */
     public Publicacao editarPublicacao(UUID id, DadosDaPublicacao novosDados) {
-        Publicacao editada = publicacoes.editar(id, novosDados);
-        acessos.registrar(TipoDeOperacao.EDICAO_DE_PUBLICACAO, editada.getAutor().getLogin());
-        return editada;
+        return invocador.executar(new EditarPublicacaoComando(publicacoes, acessos, id, novosDados));
     }
 
     /** @see GerenciadorDePublicacoes#remover */
     public void removerPublicacao(UUID id) {
-        Publicacao publicacao = publicacoes.buscarPorId(id);
-        publicacoes.remover(id);
-        acessos.registrar(TipoDeOperacao.REMOCAO_DE_PUBLICACAO, publicacao.getAutor().getLogin());
+        invocador.executar(new RemoverPublicacaoComando(publicacoes, acessos, id));
     }
 
     // ---- Relatório de acessos ----
@@ -208,22 +198,21 @@ public final class FacadeSingletonController {
      * @return o conteúdo do arquivo do relatório
      */
     public byte[] gerarRelatorioDeAcessos(FormatoDeRelatorio formato) {
-        Objects.requireNonNull(formato, "O formato do relatório é obrigatório.");
-        return formato.criarGerador().gerar(acessos.calcularEstatisticas());
+        return invocador.executar(new GerarRelatorioDeAcessosComando(acessos, formato));
     }
 
     // ---- Estatísticas ----
 
     public int quantidadeDeUsuarios() {
-        return usuarios.quantidade();
+        return invocador.executar(new QuantidadeDeUsuariosComando(usuarios));
     }
 
     public int quantidadeDePublicacoes() {
-        return publicacoes.quantidade();
+        return invocador.executar(new QuantidadeDePublicacoesComando(publicacoes));
     }
 
     /** Total de entidades cadastradas no sistema: usuários mais publicações. */
     public int quantidadeDeEntidadesCadastradas() {
-        return quantidadeDeUsuarios() + quantidadeDePublicacoes();
+        return invocador.executar(new QuantidadeDeEntidadesCadastradasComando(usuarios, publicacoes));
     }
 }
