@@ -36,6 +36,7 @@ public final class FacadeSingletonController {
     private final GerenciadorDeUsuarios usuarios;
     private final GerenciadorDePublicacoes publicacoes;
     private final GerenciadorDeAcessos acessos;
+    private final InvocadorDeComandos invocador = new InvocadorDeComandos();
 
     private FacadeSingletonController(
             UsuarioRepositorio usuarios, PublicacaoRepositorio publicacoes,
@@ -135,15 +136,12 @@ public final class FacadeSingletonController {
 
     /** @see GerenciadorDeUsuarios#adicionar */
     public Usuario adicionarUsuario(String nome, String email, String login, String senha, Papel papel) {
-        Usuario usuario = usuarios.adicionar(nome, email, login, senha, papel);
-        acessos.registrar(TipoDeOperacao.CADASTRO_DE_USUARIO, usuario.getLogin());
-        return usuario;
+        return invocador.executar(
+                new AdicionarUsuarioComando(usuarios, acessos, nome, email, login, senha, papel));
     }
 
     public List<Usuario> listarUsuarios() {
-        List<Usuario> lista = usuarios.listarTodos();
-        acessos.registrar(TipoDeOperacao.LISTAGEM_DE_USUARIOS, null);
-        return lista;
+        return invocador.executar(new ListarUsuariosComando(usuarios, acessos));
     }
 
     /**
@@ -153,10 +151,7 @@ public final class FacadeSingletonController {
      * @see GerenciadorDeUsuarios#editar
      */
     public Usuario editarUsuario(UUID id, DadosDoUsuario novosDados) {
-        Usuario editado = usuarios.editar(id, novosDados);
-        publicacoes.atualizarAutor(editado);
-        acessos.registrar(TipoDeOperacao.EDICAO_DE_USUARIO, editado.getLogin());
-        return editado;
+        return invocador.executar(new EditarUsuarioComando(usuarios, publicacoes, acessos, id, novosDados));
     }
 
     /**
@@ -166,13 +161,7 @@ public final class FacadeSingletonController {
      * @throws UsuarioNaoEncontradoException  se não houver usuário com essa identidade
      */
     public void removerUsuario(UUID id) {
-        Usuario usuario = usuarios.buscarPorId(id);
-        int publicacoesDoUsuario = publicacoes.contarDoAutor(usuario);
-        if (publicacoesDoUsuario > 0) {
-            throw new UsuarioComPublicacoesException(usuario.getLogin(), publicacoesDoUsuario);
-        }
-        usuarios.remover(id);
-        acessos.registrar(TipoDeOperacao.REMOCAO_DE_USUARIO, usuario.getLogin());
+        invocador.executar(new RemoverUsuarioComando(usuarios, publicacoes, acessos, id));
     }
 
     // ---- Publicações ----
