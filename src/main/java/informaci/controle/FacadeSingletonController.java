@@ -4,7 +4,6 @@ import informaci.entidade.DadosDaPublicacao;
 import informaci.entidade.DadosDoUsuario;
 import informaci.entidade.Papel;
 import informaci.entidade.Publicacao;
-import informaci.entidade.TipoDeOperacao;
 import informaci.entidade.Usuario;
 
 import java.time.Clock;
@@ -36,6 +35,8 @@ public final class FacadeSingletonController {
     private final GerenciadorDeUsuarios usuarios;
     private final GerenciadorDePublicacoes publicacoes;
     private final GerenciadorDeAcessos acessos;
+    private final InvocadorDeComandos invocador = new InvocadorDeComandos();
+    private final HistoricoDeEdicaoDePublicacao historicoDeEdicao = new HistoricoDeEdicaoDePublicacao();
 
     private FacadeSingletonController(
             UsuarioRepositorio usuarios, PublicacaoRepositorio publicacoes,
@@ -135,15 +136,12 @@ public final class FacadeSingletonController {
 
     /** @see GerenciadorDeUsuarios#adicionar */
     public Usuario adicionarUsuario(String nome, String email, String login, String senha, Papel papel) {
-        Usuario usuario = usuarios.adicionar(nome, email, login, senha, papel);
-        acessos.registrar(TipoDeOperacao.CADASTRO_DE_USUARIO, usuario.getLogin());
-        return usuario;
+        return invocador.executar(
+                new AdicionarUsuarioComando(usuarios, acessos, nome, email, login, senha, papel));
     }
 
     public List<Usuario> listarUsuarios() {
-        List<Usuario> lista = usuarios.listarTodos();
-        acessos.registrar(TipoDeOperacao.LISTAGEM_DE_USUARIOS, null);
-        return lista;
+        return invocador.executar(new ListarUsuariosComando(usuarios, acessos));
     }
 
     /**
@@ -153,10 +151,7 @@ public final class FacadeSingletonController {
      * @see GerenciadorDeUsuarios#editar
      */
     public Usuario editarUsuario(UUID id, DadosDoUsuario novosDados) {
-        Usuario editado = usuarios.editar(id, novosDados);
-        publicacoes.atualizarAutor(editado);
-        acessos.registrar(TipoDeOperacao.EDICAO_DE_USUARIO, editado.getLogin());
-        return editado;
+        return invocador.executar(new EditarUsuarioComando(usuarios, publicacoes, acessos, id, novosDados));
     }
 
     /**
@@ -166,13 +161,7 @@ public final class FacadeSingletonController {
      * @throws UsuarioNaoEncontradoException  se não houver usuário com essa identidade
      */
     public void removerUsuario(UUID id) {
-        Usuario usuario = usuarios.buscarPorId(id);
-        int publicacoesDoUsuario = publicacoes.contarDoAutor(usuario);
-        if (publicacoesDoUsuario > 0) {
-            throw new UsuarioComPublicacoesException(usuario.getLogin(), publicacoesDoUsuario);
-        }
-        usuarios.remover(id);
-        acessos.registrar(TipoDeOperacao.REMOCAO_DE_USUARIO, usuario.getLogin());
+        invocador.executar(new RemoverUsuarioComando(usuarios, publicacoes, acessos, id));
     }
 
     // ---- Publicações ----
@@ -184,30 +173,40 @@ public final class FacadeSingletonController {
      * @see GerenciadorDePublicacoes#publicar
      */
     public Publicacao publicar(String emailDoAutor, DadosDaPublicacao dados) {
-        Usuario autor = usuarios.buscarPorEmail(emailDoAutor);
-        Publicacao publicacao = publicacoes.publicar(autor, dados);
-        acessos.registrar(TipoDeOperacao.PUBLICACAO, autor.getLogin());
-        return publicacao;
+        return invocador.executar(new PublicarComando(usuarios, publicacoes, acessos, emailDoAutor, dados));
     }
 
     public List<Publicacao> listarFeed() {
-        List<Publicacao> feed = publicacoes.listarFeed();
-        acessos.registrar(TipoDeOperacao.CONSULTA_AO_FEED, null);
-        return feed;
+        return invocador.executar(new ListarFeedComando(publicacoes, acessos));
     }
 
-    /** @see GerenciadorDePublicacoes#editar */
+    /**
+     * Edita a publicação e guarda o estado anterior, para que esta edição
+     * possa ser desfeita (padrão Memento).
+     *
+     * @see GerenciadorDePublicacoes#editar
+     */
     public Publicacao editarPublicacao(UUID id, DadosDaPublicacao novosDados) {
-        Publicacao editada = publicacoes.editar(id, novosDados);
-        acessos.registrar(TipoDeOperacao.EDICAO_DE_PUBLICACAO, editada.getAutor().getLogin());
-        return editada;
+        return invocador.executar(
+                new EditarPublicacaoComando(publicacoes, acessos, historicoDeEdicao, id, novosDados));
+    }
+
+    /**
+     * Desfaz a última edição de publicação, devolvendo a publicação ao estado
+     * de antes dela (padrão Memento). Só a última edição pode ser desfeita, e
+     * uma única vez.
+     *
+     * @return a publicação como estava antes da última edição
+     * @throws NadaParaDesfazerException       se não houver edição para desfazer
+     * @throws PublicacaoNaoEncontradaException se a publicação não existir mais
+     */
+    public Publicacao desfazerUltimaEdicaoDePublicacao() {
+        return invocador.executar(new DesfazerEdicaoDePublicacaoComando(publicacoes, acessos, historicoDeEdicao));
     }
 
     /** @see GerenciadorDePublicacoes#remover */
     public void removerPublicacao(UUID id) {
-        Publicacao publicacao = publicacoes.buscarPorId(id);
-        publicacoes.remover(id);
-        acessos.registrar(TipoDeOperacao.REMOCAO_DE_PUBLICACAO, publicacao.getAutor().getLogin());
+        invocador.executar(new RemoverPublicacaoComando(publicacoes, acessos, historicoDeEdicao, id));
     }
 
     // ---- Relatório de acessos ----
@@ -219,22 +218,21 @@ public final class FacadeSingletonController {
      * @return o conteúdo do arquivo do relatório
      */
     public byte[] gerarRelatorioDeAcessos(FormatoDeRelatorio formato) {
-        Objects.requireNonNull(formato, "O formato do relatório é obrigatório.");
-        return formato.criarGerador().gerar(acessos.calcularEstatisticas());
+        return invocador.executar(new GerarRelatorioDeAcessosComando(acessos, formato));
     }
 
     // ---- Estatísticas ----
 
     public int quantidadeDeUsuarios() {
-        return usuarios.quantidade();
+        return invocador.executar(new QuantidadeDeUsuariosComando(usuarios));
     }
 
     public int quantidadeDePublicacoes() {
-        return publicacoes.quantidade();
+        return invocador.executar(new QuantidadeDePublicacoesComando(publicacoes));
     }
 
     /** Total de entidades cadastradas no sistema: usuários mais publicações. */
     public int quantidadeDeEntidadesCadastradas() {
-        return quantidadeDeUsuarios() + quantidadeDePublicacoes();
+        return invocador.executar(new QuantidadeDeEntidadesCadastradasComando(usuarios, publicacoes));
     }
 }

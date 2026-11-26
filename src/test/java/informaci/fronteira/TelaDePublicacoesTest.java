@@ -155,4 +155,40 @@ class TelaDePublicacoesTest {
         assertTrue(saida.contains("Texto: "));
         assertEquals(0, fachada.quantidadeDePublicacoes());
     }
+
+    @Test
+    void deve_desfazer_a_ultima_edicao() {
+        Publicacao original = publicarComunicado("Mudança de sala");
+        fachada.editarPublicacao(original.getId(), new DadosDaPublicacao(
+                "Sala alterada", "Outro texto.", Categoria.COMUNICADO, null, null));
+
+        String saida = executar("5", "0");
+
+        Publicacao restaurada = fachada.listarFeed().get(0);
+        assertTrue(saida.contains("5 - Desfazer última edição"));
+        assertTrue(saida.contains("Edição desfeita: Mudança de sala"));
+        assertEquals(original.getId(), restaurada.getId());
+        assertEquals("Texto do comunicado.", restaurada.getTexto());
+    }
+
+    @Test
+    void deve_avisar_quando_nao_ha_edicao_para_desfazer() {
+        publicarComunicado("Aviso");
+
+        String saida = executar("5", "0");
+
+        assertTrue(saida.contains("Não há edição de publicação para desfazer."));
+        assertEquals("Aviso", fachada.listarFeed().get(0).getTitulo());
+    }
+
+    @Test
+    void deve_desfazer_a_edicao_feita_pelo_menu() {
+        publicarComunicado("Mudança de sala");
+
+        String saida = executar("3", "1", "Mudança de sala da disciplina", "", "", "", "", "5", "5", "0");
+
+        assertTrue(saida.contains("Edição desfeita: Mudança de sala"));
+        assertTrue(saida.contains("Não há edição de publicação para desfazer."));
+        assertEquals("Mudança de sala", fachada.listarFeed().get(0).getTitulo());
+    }
 }
