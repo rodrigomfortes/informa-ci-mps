@@ -13,6 +13,7 @@
 | [ADR-0004](adr/0004-adapter-servico-de-log.md) | Adapter para isolar a biblioteca de log (`java.util.logging`) | NF-MAN-01, NF-SEG-02 |
 | [ADR-0005](adr/0005-template-method-relatorio-de-acessos.md) | Template Method para o relatório de acessos em HTML e PDF | RF12, RF13, NF-HSW-01 |
 | [ADR-0006](adr/0006-memento-desfazer-edicao-de-publicacao.md) | Memento para desfazer a última edição de publicação | RF14, NF-USA-01 |
+| [ADR-0007](adr/0007-command-na-fachada.md) | Command nas operações da fachada | RF01–RF14, NF-MAN-01 |
 
 ## Como cada requisito não funcional é atendido (parcial — Sprints 1 e 2)
 
