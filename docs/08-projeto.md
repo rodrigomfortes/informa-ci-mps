@@ -126,6 +126,7 @@ classDiagram
             -GerenciadorDeUsuarios usuarios
             -GerenciadorDePublicacoes publicacoes
             -GerenciadorDeAcessos acessos
+            -InvocadorDeComandos invocador
             +inicializar(FabricaDeRepositorios fabrica, ServicoDeLog log)$ FacadeSingletonController
             +inicializar(FabricaDeRepositorios fabrica)$ FacadeSingletonController
             ~inicializar(UsuarioRepositorio, PublicacaoRepositorio, RegistroDeAcessoRepositorio)$ FacadeSingletonController
@@ -503,9 +504,77 @@ classDiagram
     GeradorDeRelatorioDeAcessos ..> EstatisticasDeAcesso : lê
     GeradorDeRelatorioDeAcessos <|-- RelatorioDeAcessosEmHtml : Template Method
     GeradorDeRelatorioDeAcessos <|-- RelatorioDeAcessosEmPdf : Template Method
+
+    %% ── Command: cada operação da fachada é um comando executado pelo invocador ──
+    namespace business.controle {
+        class Comando~R~ {
+            <<interface · Command>>
+            +executar() R
+        }
+        class InvocadorDeComandos {
+            <<Invoker>>
+            +executar(Comando~R~ comando) R
+        }
+        class AdicionarUsuarioComando {
+            +executar() Usuario
+        }
+        class ListarUsuariosComando {
+            +executar() List~Usuario~
+        }
+        class EditarUsuarioComando {
+            +executar() Usuario
+        }
+        class RemoverUsuarioComando {
+            +executar() Void
+        }
+        class PublicarComando {
+            +executar() Publicacao
+        }
+        class ListarFeedComando {
+            +executar() List~Publicacao~
+        }
+        class EditarPublicacaoComando {
+            +executar() Publicacao
+        }
+        class RemoverPublicacaoComando {
+            +executar() Void
+        }
+        class GerarRelatorioDeAcessosComando {
+            +executar() byte[]
+        }
+        class QuantidadeDeUsuariosComando {
+            +executar() Integer
+        }
+        class QuantidadeDePublicacoesComando {
+            +executar() Integer
+        }
+        class QuantidadeDeEntidadesCadastradasComando {
+            +executar() Integer
+        }
+    }
+
+    FacadeSingletonController --> InvocadorDeComandos : entrega os comandos
+    FacadeSingletonController ..> Comando : cria com os parâmetros
+    InvocadorDeComandos ..> Comando : executa
+    Comando <|.. AdicionarUsuarioComando
+    Comando <|.. ListarUsuariosComando
+    Comando <|.. EditarUsuarioComando
+    Comando <|.. RemoverUsuarioComando
+    Comando <|.. PublicarComando
+    Comando <|.. ListarFeedComando
+    Comando <|.. EditarPublicacaoComando
+    Comando <|.. RemoverPublicacaoComando
+    Comando <|.. GerarRelatorioDeAcessosComando
+    Comando <|.. QuantidadeDeUsuariosComando
+    Comando <|.. QuantidadeDePublicacoesComando
+    Comando <|.. QuantidadeDeEntidadesCadastradasComando
+    AdicionarUsuarioComando ..> GerenciadorDeUsuarios : receptor
+    PublicarComando ..> GerenciadorDePublicacoes : receptor
+    GerarRelatorioDeAcessosComando ..> FormatoDeRelatorio : escolhe o gerador
+    note for InvocadorDeComandos "Command: os comandos guardam os parâmetros e chamam os gerentes (receptores)"
 ```
 
-> Para não poluir o diagrama, as superclasses das exceções foram omitidas: `NomeInvalidoException`, `EmailInvalidoException`, `LoginInvalidoException`, `SenhaInvalidaException` e `PublicacaoInvalidaException` estendem `IllegalArgumentException`; as demais estendem `RuntimeException`.
+> Para não poluir o diagrama, só dois comandos mostram a ligação com o receptor: cada comando usa os gerentes da operação (`GerenciadorDeUsuarios`, `GerenciadorDePublicacoes` e `GerenciadorDeAcessos`, que registra o acesso). Também foram omitidas as superclasses das exceções: `NomeInvalidoException`, `EmailInvalidoException`, `LoginInvalidoException`, `SenhaInvalidaException` e `PublicacaoInvalidaException` estendem `IllegalArgumentException`; as demais estendem `RuntimeException`.
 
 **Tratamento das exceções** (`TelaDeUsuarios` e `TelaDePublicacoes`): cada exceção vira uma mensagem para o usuário, e o sistema continua em execução (NF-USA-01, NF-CON-01).
 
@@ -535,7 +604,7 @@ Preencha uma linha por padrão aplicado. Cada padrão relevante também tem um A
 | Factory Method | S4 | `TipoDeArmazenamento` (criador: método abstrato `criarFabrica`); constantes `MEMORIA` e `ARQUIVO` (criadores concretos, cada uma sobrescreve `criarFabrica`); `FabricaDeRepositorios` (produto); `Aplicacao` (cliente) | Seleciona o tipo de repositório a partir da opção escolhida no menu, sem `switch` com `new` concretos em `Aplicacao`. O menu é montado a partir das constantes do enum, então um novo armazenamento só exige uma constante e uma fábrica | [ADR-0003](07-arquitetura/adr/0003-repository-e-fabrica-de-repositorios.md) |
 | Adapter | S4 | `ServicoDeLog` (Target, em `business.controle`); `JulLogAdapter` (Adapter, em `infra.log`); `java.util.logging.Logger` (Adaptee); `GerenciadorDeUsuarios`, `GerenciadorDePublicacoes`, `GerenciadorDeAcessos` (clientes); `NullLog` (implementação nula) | Os gerentes registram eventos de negócio sem conhecer a biblioteca de log: trocar o JUL por outra lib é escrever outro adapter. O log vai para o arquivo `informaci.log`, sem se misturar com os menus do console | [ADR-0004](07-arquitetura/adr/0004-adapter-servico-de-log.md) |
 | Template Method | S4 | `GeradorDeRelatorioDeAcessos` (classe abstrata, em `business.controle`: método-modelo `final` `gerar` e os passos abstratos `iniciarDocumento`, `escreverParagrafo`, `escreverTabela`, `concluirDocumento`); `RelatorioDeAcessosEmHtml`, `RelatorioDeAcessosEmPdf` (classes concretas); `FormatoDeRelatorio` (escolhe o gerador); `FacadeSingletonController` (cliente) | O método-modelo fixa as seções do relatório de estatísticas de acesso e a ordem delas, e as subclasses só decidem como cada parte é escrita no seu formato. Assim HTML e PDF trazem exatamente as mesmas informações, e um formato novo é só uma subclasse nova. As estatísticas são calculadas antes, em `EstatisticasDeAcesso.calcular` | [ADR-0005](07-arquitetura/adr/0005-template-method-relatorio-de-acessos.md) |
-| Command | S5 | | | |
+| Command | S5 | `Comando<R>` (Command: interface com `executar()`); `AdicionarUsuarioComando`, `ListarUsuariosComando`, `EditarUsuarioComando`, `RemoverUsuarioComando`, `PublicarComando`, `ListarFeedComando`, `EditarPublicacaoComando`, `RemoverPublicacaoComando`, `GerarRelatorioDeAcessosComando` e os três comandos de quantidade (comandos concretos); `InvocadorDeComandos` (Invoker); `FacadeSingletonController` (cliente: cria cada comando com os parâmetros recebidos); `GerenciadorDeUsuarios`, `GerenciadorDePublicacoes`, `GerenciadorDeAcessos` (receptores) | Cada operação da camada de negócio vira um objeto que guarda os seus parâmetros e sabe se executar. A fachada deixa de conter a lógica das operações e só monta o comando e o entrega ao invocador; uma operação nova é um comando novo. O comando de edição de publicação é também o ponto onde o estado anterior é guardado para o "desfazer" (Memento) | [ADR-0007](07-arquitetura/adr/0007-command-na-fachada.md) |
 | Memento | S5 | | | |
 
 ## 4. Rastreabilidade cenário → teste
