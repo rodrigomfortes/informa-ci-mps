@@ -112,6 +112,7 @@ classDiagram
             -exibirFeed() void
             -editar() void
             -remover() void
+            -desfazerUltimaEdicao() void
         }
         class Console {
             ~ler(String rotulo) String
@@ -127,6 +128,7 @@ classDiagram
             -GerenciadorDePublicacoes publicacoes
             -GerenciadorDeAcessos acessos
             -InvocadorDeComandos invocador
+            -HistoricoDeEdicaoDePublicacao historicoDeEdicao
             +inicializar(FabricaDeRepositorios fabrica, ServicoDeLog log)$ FacadeSingletonController
             +inicializar(FabricaDeRepositorios fabrica)$ FacadeSingletonController
             ~inicializar(UsuarioRepositorio, PublicacaoRepositorio, RegistroDeAcessoRepositorio)$ FacadeSingletonController
@@ -140,6 +142,7 @@ classDiagram
             +listarFeed() List~Publicacao~
             +editarPublicacao(UUID id, DadosDaPublicacao dados) Publicacao
             +removerPublicacao(UUID id) void
+            +desfazerUltimaEdicaoDePublicacao() Publicacao
             +quantidadeDeUsuarios() int
             +quantidadeDePublicacoes() int
             +quantidadeDeEntidadesCadastradas() int
@@ -161,6 +164,7 @@ classDiagram
             +listarFeed() List~Publicacao~
             +buscarPorId(UUID id) Publicacao
             +editar(UUID id, DadosDaPublicacao dados) Publicacao
+            +restaurar(MementoDePublicacao memento) Publicacao
             +remover(UUID id) void
             +contarDoAutor(Usuario autor) int
             +atualizarAutor(Usuario autor) void
@@ -240,6 +244,8 @@ classDiagram
             -String local
             +comDados(DadosDaPublicacao novosDados) Publicacao
             +comAutor(Usuario autor) Publicacao
+            +salvarEstado() MementoDePublicacao
+            +restaurar(MementoDePublicacao memento) Publicacao
         }
         class DadosDaPublicacao {
             <<record>>
@@ -572,6 +578,46 @@ classDiagram
     PublicarComando ..> GerenciadorDePublicacoes : receptor
     GerarRelatorioDeAcessosComando ..> FormatoDeRelatorio : escolhe o gerador
     note for InvocadorDeComandos "Command: os comandos guardam os parâmetros e chamam os gerentes (receptores)"
+
+    %% ── Memento: desfazer a última edição de publicação ──
+    namespace business.entidade {
+        class MementoDePublicacao {
+            <<Memento>>
+            -UUID idDaPublicacao
+            -DadosDaPublicacao dados
+            +getIdDaPublicacao() UUID
+            ~getDados() DadosDaPublicacao
+        }
+    }
+
+    namespace business.controle {
+        class HistoricoDeEdicaoDePublicacao {
+            <<Caretaker>>
+            -MementoDePublicacao ultimaEdicao
+            +guardar(MementoDePublicacao memento) void
+            +ultimaEdicao() Optional~MementoDePublicacao~
+            +descartar() void
+            +descartarSeFor(UUID idDaPublicacao) void
+        }
+        class DesfazerEdicaoDePublicacaoComando {
+            +executar() Publicacao
+        }
+        class NadaParaDesfazerException
+    }
+
+    note for Publicacao "Memento: originador (salvarEstado e restaurar)"
+
+    Publicacao ..> MementoDePublicacao : cria e restaura
+    MementoDePublicacao --> DadosDaPublicacao : estado guardado
+    HistoricoDeEdicaoDePublicacao o-- MementoDePublicacao : guarda a última
+    FacadeSingletonController --> HistoricoDeEdicaoDePublicacao
+    Comando <|.. DesfazerEdicaoDePublicacaoComando
+    EditarPublicacaoComando ..> HistoricoDeEdicaoDePublicacao : guarda o estado anterior
+    RemoverPublicacaoComando ..> HistoricoDeEdicaoDePublicacao : esquece a publicação removida
+    DesfazerEdicaoDePublicacaoComando ..> HistoricoDeEdicaoDePublicacao : pede a última edição
+    DesfazerEdicaoDePublicacaoComando ..> GerenciadorDePublicacoes : receptor
+    DesfazerEdicaoDePublicacaoComando ..> NadaParaDesfazerException : lança
+    GerenciadorDePublicacoes ..> MementoDePublicacao : restaura
 ```
 
 > Para não poluir o diagrama, só dois comandos mostram a ligação com o receptor: cada comando usa os gerentes da operação (`GerenciadorDeUsuarios`, `GerenciadorDePublicacoes` e `GerenciadorDeAcessos`, que registra o acesso). Também foram omitidas as superclasses das exceções: `NomeInvalidoException`, `EmailInvalidoException`, `LoginInvalidoException`, `SenhaInvalidaException` e `PublicacaoInvalidaException` estendem `IllegalArgumentException`; as demais estendem `RuntimeException`.
@@ -588,7 +634,8 @@ classDiagram
 | `PublicacaoInvalidaException` | `Publicacao` | "Publicação inválida: …" |
 | `UsuarioNaoEncontradoException` | `GerenciadorDeUsuarios` (autor da publicação) | "Não foi possível publicar: …" |
 | `UsuarioComPublicacoesException` | `FacadeSingletonController` (RF11) | "Não foi possível remover: …" |
-| `PublicacaoNaoEncontradaException` | `GerenciadorDePublicacoes` | "Não foi possível editar: …" / "Não foi possível remover: …" |
+| `PublicacaoNaoEncontradaException` | `GerenciadorDePublicacoes` | "Não foi possível editar: …" / "Não foi possível remover: …" / "Não foi possível desfazer: …" |
+| `NadaParaDesfazerException` | `DesfazerEdicaoDePublicacaoComando` (RF14) | "Não há edição de publicação para desfazer." |
 | `PersistenciaException` | repositórios em arquivo | Ao gravar: "Falha ao armazenar …". Ao ler, na inicialização: a mensagem é exibida e `Aplicacao` pergunta de novo o armazenamento. Se a gravação falhar, a cópia em memória volta ao estado anterior |
 
 ## 3. Padrões de projeto utilizados
@@ -605,7 +652,7 @@ Preencha uma linha por padrão aplicado. Cada padrão relevante também tem um A
 | Adapter | S4 | `ServicoDeLog` (Target, em `business.controle`); `JulLogAdapter` (Adapter, em `infra.log`); `java.util.logging.Logger` (Adaptee); `GerenciadorDeUsuarios`, `GerenciadorDePublicacoes`, `GerenciadorDeAcessos` (clientes); `NullLog` (implementação nula) | Os gerentes registram eventos de negócio sem conhecer a biblioteca de log: trocar o JUL por outra lib é escrever outro adapter. O log vai para o arquivo `informaci.log`, sem se misturar com os menus do console | [ADR-0004](07-arquitetura/adr/0004-adapter-servico-de-log.md) |
 | Template Method | S4 | `GeradorDeRelatorioDeAcessos` (classe abstrata, em `business.controle`: método-modelo `final` `gerar` e os passos abstratos `iniciarDocumento`, `escreverParagrafo`, `escreverTabela`, `concluirDocumento`); `RelatorioDeAcessosEmHtml`, `RelatorioDeAcessosEmPdf` (classes concretas); `FormatoDeRelatorio` (escolhe o gerador); `FacadeSingletonController` (cliente) | O método-modelo fixa as seções do relatório de estatísticas de acesso e a ordem delas, e as subclasses só decidem como cada parte é escrita no seu formato. Assim HTML e PDF trazem exatamente as mesmas informações, e um formato novo é só uma subclasse nova. As estatísticas são calculadas antes, em `EstatisticasDeAcesso.calcular` | [ADR-0005](07-arquitetura/adr/0005-template-method-relatorio-de-acessos.md) |
 | Command | S5 | `Comando<R>` (Command: interface com `executar()`); `AdicionarUsuarioComando`, `ListarUsuariosComando`, `EditarUsuarioComando`, `RemoverUsuarioComando`, `PublicarComando`, `ListarFeedComando`, `EditarPublicacaoComando`, `RemoverPublicacaoComando`, `GerarRelatorioDeAcessosComando` e os três comandos de quantidade (comandos concretos); `InvocadorDeComandos` (Invoker); `FacadeSingletonController` (cliente: cria cada comando com os parâmetros recebidos); `GerenciadorDeUsuarios`, `GerenciadorDePublicacoes`, `GerenciadorDeAcessos` (receptores) | Cada operação da camada de negócio vira um objeto que guarda os seus parâmetros e sabe se executar. A fachada deixa de conter a lógica das operações e só monta o comando e o entrega ao invocador; uma operação nova é um comando novo. O comando de edição de publicação é também o ponto onde o estado anterior é guardado para o "desfazer" (Memento) | [ADR-0007](07-arquitetura/adr/0007-command-na-fachada.md) |
-| Memento | S5 | | | |
+| Memento | S5 | `Publicacao` (Originator: `salvarEstado` e `restaurar`); `MementoDePublicacao` (Memento: guarda título, texto, categoria, data e local, legíveis só no pacote `entidade`); `HistoricoDeEdicaoDePublicacao` (Caretaker: guarda só a última edição); `EditarPublicacaoComando` (pede o memento antes de editar); `DesfazerEdicaoDePublicacaoComando` e `FacadeSingletonController.desfazerUltimaEdicaoDePublicacao` (desfazer) | Permite desfazer a última edição de publicação (RF14) sem que a camada de controle conheça ou copie os campos da publicação: só a própria `Publicacao` cria e lê o estado guardado. Só a última atualização é guardada, como pede a sprint, e uma edição recusada não a substitui | [ADR-0006](07-arquitetura/adr/0006-memento-desfazer-edicao-de-publicacao.md) |
 
 ## 4. Rastreabilidade cenário → teste
 
